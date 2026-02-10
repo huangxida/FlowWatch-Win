@@ -32,12 +32,19 @@ Write-Host "`n--- Packaging ---" -ForegroundColor Yellow
 
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
-# Collect files to package (exclude debug symbols and xml docs)
+# Copy files into a staging folder so ZIP contains a top-level "FlowWatch" directory
+$stageDir = Join-Path $projectDir "_stage\FlowWatch"
+if (Test-Path (Join-Path $projectDir "_stage")) { Remove-Item (Join-Path $projectDir "_stage") -Recurse -Force }
+New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
+
 $filesToPackage = Get-ChildItem -Path $binDir -File | Where-Object {
     $_.Extension -notin @('.pdb', '.xml', '.config') -or $_.Name -eq 'FlowWatch.exe.config'
 }
+$filesToPackage | ForEach-Object { Copy-Item $_.FullName -Destination $stageDir }
 
-Compress-Archive -Path ($filesToPackage | ForEach-Object { $_.FullName }) -DestinationPath $zipPath -Force
+Compress-Archive -Path (Join-Path $projectDir "_stage\FlowWatch") -DestinationPath $zipPath -Force
+
+Remove-Item (Join-Path $projectDir "_stage") -Recurse -Force
 
 Write-Host "`n=== Build complete ===" -ForegroundColor Green
 Write-Host "Output: $zipPath"
