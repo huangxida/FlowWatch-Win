@@ -1,0 +1,43 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Text shadow effect for readability -->
+    <DropShadowEffect x:Key="TextShadow" ShadowDepth="1" Direction="270" BlurRadius="3"
+                      Color="Black" Opacity="0.45"/>
+
+    <DropShadowEffect x:Key="TextGlow" ShadowDepth="0" Direction="0" BlurRadius="12"
+                      Color="Black" Opacity="0.35"/>
+
+    <!-- Base overlay text style -->
+    <Style x:Key="OverlayTextBase" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="ExtraBold"/>
+        <Setter Property="Effect" Value="{StaticResource TextShadow}"/>
+    </Style>
+
+    <!-- Num style with tabular figures and right alignment -->
+    <Style x:Key="NumStyle" TargetType="TextBlock" BasedOn="{StaticResource OverlayTextBase}">
+        <Setter Property="MinWidth" Value="34"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+
+    <!-- Unit style -->
+    <Style x:Key="UnitStyle" TargetType="TextBlock" BasedOn="{StaticResource OverlayTextBase}">
+        <Setter Property="MinWidth" Value="14"/>
+        <Setter Property="Opacity" Value="0.9"/>
+    </Style>
+
+    <!-- Label style (arrow) -->
+    <Style x:Key="LabelStyle" TargetType="TextBlock" BasedOn="{StaticResource OverlayTextBase}">
+        <Setter Property="MinWidth" Value="12"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <!-- Secondary (usage) style -->
+    <Style x:Key="SecondaryStyle" TargetType="TextBlock" BasedOn="{StaticResource OverlayTextBase}">
+        <Setter Property="Opacity" Value="0.95"/>
+    </Style>
+
+</ResourceDictionary>

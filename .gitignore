@@ -1,0 +1,39 @@
+# Build output
+bin/
+obj/
+publish/
+FlowWatch-*.zip
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.vspscc
+*.vssscc
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+nuget.exe
+
+# Build artifacts
+*.pdb
+*.bak
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+/.idea
+/.vscode
+.claude/
+
+# Legacy Electron (removed)
+node_modules/
+dist/
+out/
+tmp/

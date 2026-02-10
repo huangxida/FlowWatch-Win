@@ -1,0 +1,251 @@
+<Window x:Class="FlowWatch.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FlowWatch.ViewModels"
+        Title="FlowWatch 设置"
+        Width="480" Height="620"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource SettingsWindowStyle}"
+        ShowInTaskbar="True">
+    <Window.DataContext>
+        <vm:SettingsViewModel/>
+    </Window.DataContext>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28,32,28">
+
+            <!-- Header -->
+            <TextBlock Text="设置" FontSize="20" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,24"/>
+
+            <!-- ══════ Section: 常规 ══════ -->
+            <TextBlock Text="常规" FontSize="11.5" FontWeight="Medium"
+                       Foreground="{StaticResource HintBrush}" Margin="0,0,0,10"
+                       />
+
+            <Border Background="{StaticResource CardBackgroundBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="16,4">
+                <StackPanel>
+                    <!-- Refresh interval -->
+                    <DockPanel Margin="0,10,0,10">
+                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <TextBlock Text="刷新频率" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBlock Style="{StaticResource HintStyle}" Text="数据更新间隔，越小越实时"/>
+                        </StackPanel>
+                        <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" Orientation="Horizontal">
+                            <Slider Value="{Binding RefreshIntervalSeconds}" Width="120"
+                                    Minimum="1" Maximum="10" IsSnapToTickEnabled="True"
+                                    TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Style="{StaticResource ValueStyle}" Width="32"
+                                       TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0">
+                                <TextBlock.Text>
+                                    <Binding Path="RefreshIntervalSeconds" StringFormat="{}{0}s"/>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource DividerStyle}"/>
+
+                    <!-- Auto launch -->
+                    <DockPanel Margin="0,10,0,10">
+                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <TextBlock Text="开机自启" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBlock Style="{StaticResource HintStyle}" Text="登录系统时自动运行"/>
+                        </StackPanel>
+                        <CheckBox IsChecked="{Binding AutoLaunch}"
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════ Section: 窗口 ══════ -->
+            <TextBlock Text="窗口" FontSize="11.5" FontWeight="Medium"
+                       Foreground="{StaticResource HintBrush}" Margin="0,20,0,10"
+                       />
+
+            <Border Background="{StaticResource CardBackgroundBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="16,4">
+                <StackPanel>
+                    <!-- Lock on top -->
+                    <DockPanel Margin="0,10,0,10">
+                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <TextBlock Text="锁定置顶" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBlock Style="{StaticResource HintStyle}" Text="置顶并穿透点击，解锁后可拖动"/>
+                        </StackPanel>
+                        <CheckBox IsChecked="{Binding LockOnTop}"
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"/>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource DividerStyle}"/>
+
+                    <!-- Pin to desktop -->
+                    <DockPanel Margin="0,10,0,10">
+                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <TextBlock Text="固定桌面" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBlock Style="{StaticResource HintStyle}" Text="挂在桌面层级，与置顶互斥"/>
+                        </StackPanel>
+                        <CheckBox IsChecked="{Binding PinToDesktop}"
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"/>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource DividerStyle}"/>
+
+                    <!-- Layout -->
+                    <DockPanel Margin="0,10,0,10">
+                        <TextBlock Text="布局方向" Style="{StaticResource FieldLabelStyle}"
+                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                        <ComboBox SelectedValue="{Binding Layout}" SelectedValuePath="Tag"
+                                  Style="{StaticResource SettingsComboBoxStyle}"
+                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                  Width="120" VerticalAlignment="Center">
+                            <ComboBoxItem Content="水平" Tag="horizontal"/>
+                            <ComboBoxItem Content="垂直" Tag="vertical"/>
+                        </ComboBox>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource DividerStyle}"/>
+
+                    <!-- Display mode -->
+                    <DockPanel Margin="0,10,0,10">
+                        <TextBlock Text="显示模式" Style="{StaticResource FieldLabelStyle}"
+                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                        <ComboBox SelectedValue="{Binding DisplayMode}" SelectedValuePath="Tag"
+                                  Style="{StaticResource SettingsComboBoxStyle}"
+                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                  Width="120" VerticalAlignment="Center">
+                            <ComboBoxItem Content="速率" Tag="speed"/>
+                            <ComboBoxItem Content="流量" Tag="usage"/>
+                            <ComboBoxItem Content="速率+流量" Tag="both"/>
+                        </ComboBox>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════ Section: 外观 ══════ -->
+            <TextBlock Text="外观" FontSize="11.5" FontWeight="Medium"
+                       Foreground="{StaticResource HintBrush}" Margin="0,20,0,10"
+                       />
+
+            <Border Background="{StaticResource CardBackgroundBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="16,4">
+                <StackPanel>
+                    <!-- Font family -->
+                    <StackPanel Margin="0,10,0,10">
+                        <TextBlock Text="字体" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="FontPresetCombo" Grid.Column="0"
+                                      Style="{StaticResource SettingsComboBoxStyle}"
+                                      SelectionChanged="OnFontPresetChanged" Margin="0,0,8,0"
+                                      Width="160">
+                                <ComboBoxItem Content="预设字体..." Tag=""/>
+                                <ComboBoxItem Content="Segoe UI" Tag="Segoe UI, Microsoft YaHei, sans-serif"/>
+                                <ComboBoxItem Content="Microsoft YaHei" Tag="Microsoft YaHei, Segoe UI, sans-serif"/>
+                                <ComboBoxItem Content="Arial" Tag="Arial, Helvetica, sans-serif"/>
+                                <ComboBoxItem Content="Consolas" Tag="Consolas, Courier New, monospace"/>
+                            </ComboBox>
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding FontFamily, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SettingsTextBoxStyle}"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <Border Style="{StaticResource DividerStyle}"/>
+
+                    <!-- Font size -->
+                    <DockPanel Margin="0,10,0,10">
+                        <TextBlock Text="字号" Style="{StaticResource FieldLabelStyle}"
+                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                        <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                    Orientation="Horizontal" VerticalAlignment="Center">
+                            <Slider Value="{Binding FontSize}" Width="120"
+                                    Minimum="11" Maximum="19" IsSnapToTickEnabled="True"
+                                    TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Style="{StaticResource ValueStyle}" Width="36"
+                                       TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0">
+                                <TextBlock.Text>
+                                    <Binding Path="FontSize" StringFormat="{}{0}px"/>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource DividerStyle}"/>
+
+                    <!-- Color max -->
+                    <StackPanel Margin="0,10,0,10">
+                        <DockPanel>
+                            <TextBlock Text="颜色上限" Style="{StaticResource FieldLabelStyle}"
+                                       DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            <TextBlock Style="{StaticResource ValueStyle}"
+                                       DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Text>
+                                    <Binding Path="SpeedColorMaxMbps" StringFormat="{}{0} Mbps"/>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource HintStyle}"
+                                   Text="速率从白到红渐变的阈值" Margin="0,2,0,6"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="80"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider Grid.Column="0" Value="{Binding SpeedColorMaxMbps}"
+                                    Minimum="1" Maximum="1000" IsSnapToTickEnabled="True"
+                                    TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
+                                    VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding SpeedColorMaxMbps, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SettingsTextBoxStyle}" Margin="8,0,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══════ Section: 流量 ══════ -->
+            <TextBlock Text="流量统计" FontSize="11.5" FontWeight="Medium"
+                       Foreground="{StaticResource HintBrush}" Margin="0,20,0,10"
+                       />
+
+            <Border Background="{StaticResource CardBackgroundBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="16,12">
+                <StackPanel>
+                    <DockPanel>
+                        <TextBlock Text="起始时间" Style="{StaticResource FieldLabelStyle}"
+                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TrafficStartTimeText}"
+                                   Style="{StaticResource ValueStyle}"
+                                   DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <TextBlock Style="{StaticResource HintStyle}"
+                               Text="流量从应用启动开始计算，关闭后清零" Margin="0,2,0,12"/>
+                    <Button Content="重置统计" Command="{Binding ResetTrafficCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Window>

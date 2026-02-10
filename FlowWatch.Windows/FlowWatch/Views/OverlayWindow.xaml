@@ -1,0 +1,188 @@
+<Window x:Class="FlowWatch.Views.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FlowWatch.ViewModels"
+        Title="FlowWatch Overlay"
+        Width="240" Height="60"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize">
+    <Window.DataContext>
+        <vm:OverlayViewModel/>
+    </Window.DataContext>
+
+    <Grid x:Name="RootGrid" Margin="8,8,10,8"
+          MouseLeftButtonDown="OnMouseLeftButtonDown">
+
+        <!-- Horizontal layout (default) -->
+        <Grid x:Name="HorizontalLayout">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsVertical}" Value="True">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Upload -->
+            <Grid Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <!-- Primary (speed or usage) -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding UploadNum}" Style="{StaticResource NumStyle}"
+                                   Foreground="{Binding UploadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"/>
+                        <TextBlock Text="{Binding UploadUnit}" Style="{StaticResource UnitStyle}"
+                                   Foreground="{Binding UploadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"
+                                   Margin="2,0,0,0"/>
+                    </StackPanel>
+                    <!-- Secondary (usage in both mode) -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                Visibility="{Binding SecondaryVisibility}">
+                        <StackPanel.LayoutTransform>
+                            <ScaleTransform ScaleX="0.78" ScaleY="0.78"/>
+                        </StackPanel.LayoutTransform>
+                        <TextBlock Text="{Binding UploadUsageNum}" Style="{StaticResource SecondaryStyle}"
+                                   Foreground="{Binding UploadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"/>
+                        <TextBlock Text="{Binding UploadUsageUnit}" Style="{StaticResource SecondaryStyle}"
+                                   Foreground="{Binding UploadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"
+                                   Margin="2,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="&#x2191;" Style="{StaticResource LabelStyle}"
+                           Foreground="{Binding UploadLabelColor}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </Grid>
+
+            <!-- Download -->
+            <Grid Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding DownloadNum}" Style="{StaticResource NumStyle}"
+                                   Foreground="{Binding DownloadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"/>
+                        <TextBlock Text="{Binding DownloadUnit}" Style="{StaticResource UnitStyle}"
+                                   Foreground="{Binding DownloadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"
+                                   Margin="2,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                Visibility="{Binding SecondaryVisibility}">
+                        <StackPanel.LayoutTransform>
+                            <ScaleTransform ScaleX="0.78" ScaleY="0.78"/>
+                        </StackPanel.LayoutTransform>
+                        <TextBlock Text="{Binding DownloadUsageNum}" Style="{StaticResource SecondaryStyle}"
+                                   Foreground="{Binding DownloadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"/>
+                        <TextBlock Text="{Binding DownloadUsageUnit}" Style="{StaticResource SecondaryStyle}"
+                                   Foreground="{Binding DownloadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"
+                                   Margin="2,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="&#x2193;" Style="{StaticResource LabelStyle}"
+                           Foreground="{Binding DownloadLabelColor}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </Grid>
+        </Grid>
+
+        <!-- Vertical layout -->
+        <StackPanel x:Name="VerticalLayout" Orientation="Vertical">
+            <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsVertical}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </StackPanel.Style>
+
+            <!-- Upload row -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding UploadNum}" Style="{StaticResource NumStyle}"
+                                   Foreground="{Binding UploadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"/>
+                        <TextBlock Text="{Binding UploadUnit}" Style="{StaticResource UnitStyle}"
+                                   Foreground="{Binding UploadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"
+                                   Margin="2,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                Visibility="{Binding SecondaryVisibility}">
+                        <StackPanel.LayoutTransform>
+                            <ScaleTransform ScaleX="0.78" ScaleY="0.78"/>
+                        </StackPanel.LayoutTransform>
+                        <TextBlock Text="{Binding UploadUsageNum}" Style="{StaticResource SecondaryStyle}"
+                                   Foreground="{Binding UploadColor}" FontFamily="{Binding FontFamily}"
+                                   FontSize="{Binding FontSize}"/>
+                        <TextBlock Text="{Binding UploadUsageUnit}" Style="{StaticResource SecondaryStyle}"
+                                   Foreground="{Binding UploadColor}" FontFamily="{Binding FontFamily}"
+                                   FontSize="{Binding FontSize}" Margin="2,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="&#x2191;" Style="{StaticResource LabelStyle}"
+                           Foreground="{Binding UploadLabelColor}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </Grid>
+
+            <!-- Download row -->
+            <Grid Margin="0,1,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding DownloadNum}" Style="{StaticResource NumStyle}"
+                                   Foreground="{Binding DownloadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"/>
+                        <TextBlock Text="{Binding DownloadUnit}" Style="{StaticResource UnitStyle}"
+                                   Foreground="{Binding DownloadColor}"
+                                   FontFamily="{Binding FontFamily}" FontSize="{Binding FontSize}"
+                                   Margin="2,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                Visibility="{Binding SecondaryVisibility}">
+                        <StackPanel.LayoutTransform>
+                            <ScaleTransform ScaleX="0.78" ScaleY="0.78"/>
+                        </StackPanel.LayoutTransform>
+                        <TextBlock Text="{Binding DownloadUsageNum}" Style="{StaticResource SecondaryStyle}"
+                                   Foreground="{Binding DownloadColor}" FontFamily="{Binding FontFamily}"
+                                   FontSize="{Binding FontSize}"/>
+                        <TextBlock Text="{Binding DownloadUsageUnit}" Style="{StaticResource SecondaryStyle}"
+                                   Foreground="{Binding DownloadColor}" FontFamily="{Binding FontFamily}"
+                                   FontSize="{Binding FontSize}" Margin="2,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="&#x2193;" Style="{StaticResource LabelStyle}"
+                           Foreground="{Binding DownloadLabelColor}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</Window>
