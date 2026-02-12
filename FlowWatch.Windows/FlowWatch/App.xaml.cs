@@ -6,6 +6,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
+using FlowWatch.Models;
 using FlowWatch.Services;
 using FlowWatch.Views;
 
@@ -21,6 +22,8 @@ namespace FlowWatch
         private AppTrafficWindow _appTrafficWindow;
         private MenuItem _pinItem;
         private MenuItem _lockItem;
+        private UpdateWindow _updateWindow;
+        private UpdateInfo _pendingUpdateInfo;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -112,6 +115,11 @@ namespace FlowWatch
                 LogService.Info("创建应用流量窗口...");
                 _appTrafficWindow = new AppTrafficWindow();
                 LogService.Info("应用流量窗口创建完成");
+
+                // Start auto update check
+                UpdateService.Instance.UpdateAvailable += OnUpdateAvailable;
+                UpdateService.Instance.StartAutoCheck();
+                LogService.Info("更新检查服务已启动");
 
                 LogService.Info("========== 启动流程完成 ==========");
             }
@@ -210,6 +218,9 @@ namespace FlowWatch
                 });
             };
 
+            var checkUpdateItem = new MenuItem { Header = loc.Get("Tray.CheckUpdate") };
+            checkUpdateItem.Click += async (s, ev) => await ManualCheckForUpdate();
+
             var separator = new Separator();
 
             var exitItem = new MenuItem { Header = loc.Get("Tray.Exit") };
@@ -220,6 +231,7 @@ namespace FlowWatch
             contextMenu.Items.Add(appTrafficItem);
             contextMenu.Items.Add(_pinItem);
             contextMenu.Items.Add(_lockItem);
+            contextMenu.Items.Add(checkUpdateItem);
             contextMenu.Items.Add(separator);
             contextMenu.Items.Add(exitItem);
 
@@ -269,9 +281,122 @@ namespace FlowWatch
             _appTrafficWindow.Show();
         }
 
+        private void OnUpdateAvailable(UpdateInfo info)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                var settings = SettingsService.Instance.Settings;
+                if (settings.SkippedVersion == info.TagName) return;
+
+                _pendingUpdateInfo = info;
+
+                if (_trayIcon != null)
+                {
+                    var loc = LocalizationService.Instance;
+                    _trayIcon.ShowBalloonTip(
+                        loc.Get("Update.BalloonTitle"),
+                        loc.Format("Update.BalloonText", info.Version.ToString(3)),
+                        BalloonIcon.Info);
+                    _trayIcon.TrayBalloonTipClicked += OnBalloonClicked;
+                }
+            });
+        }
+
+        private void OnBalloonClicked(object sender, RoutedEventArgs e)
+        {
+            _trayIcon.TrayBalloonTipClicked -= OnBalloonClicked;
+            if (_pendingUpdateInfo != null)
+                ShowUpdateWindow(_pendingUpdateInfo);
+        }
+
+        public void ShowUpdateWindowFromSettings(UpdateInfo info)
+        {
+            ShowUpdateWindow(info);
+        }
+
+        private void ShowUpdateWindow(UpdateInfo info)
+        {
+            if (_updateWindow != null)
+            {
+                _updateWindow.Activate();
+                return;
+            }
+
+            _updateWindow = new UpdateWindow();
+            _updateWindow.SetUpdateInfo(info);
+            _updateWindow.Closed += (s, ev) => _updateWindow = null;
+            _updateWindow.Show();
+        }
+
+        private async System.Threading.Tasks.Task ManualCheckForUpdate()
+        {
+            var loc = LocalizationService.Instance;
+            try
+            {
+                var info = await UpdateService.Instance.CheckForUpdateAsync();
+                if (info != null)
+                {
+                    var skipped = SettingsService.Instance.Settings.SkippedVersion;
+                    if (skipped == info.TagName)
+                    {
+                        var currentVersion = UpdateService.Instance.GetCurrentVersion().ToString(3);
+                        MessageBox.Show(
+                            loc.Format("Update.AlreadyLatest", currentVersion),
+                            "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        ShowUpdateWindow(info);
+                    }
+                }
+                else
+                {
+                    var currentVersion = UpdateService.Instance.GetCurrentVersion().ToString(3);
+                    MessageBox.Show(
+                        loc.Format("Update.AlreadyLatest", currentVersion),
+                        "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch
+            {
+                MessageBox.Show(
+                    loc.Get("Update.CheckFailed"),
+                    "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        public void ExitForUpdate()
+        {
+            LogService.Info("========== FlowWatch 更新退出 ==========");
+            UpdateService.Instance.UpdateAvailable -= OnUpdateAvailable;
+            UpdateService.Instance.StopAutoCheck();
+            LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
+            ProcessTrafficService.Instance.Stop();
+            TrafficHistoryService.Instance.Stop();
+            NetworkMonitorService.Instance.Stop();
+            SettingsService.Instance.SettingsChanged -= OnSettingsChangedForTray;
+            _overlayWindow?.Cleanup();
+            _settingsWindow?.ForceClose();
+            _statisticsWindow?.ForceClose();
+            _appTrafficWindow?.ForceClose();
+            _updateWindow?.Close();
+
+            _trayIcon?.Dispose();
+            _trayIcon = null;
+
+            _mutex?.ReleaseMutex();
+            _mutex?.Dispose();
+            _mutex = null;
+
+            LogService.Info("清理完成，正在关闭以进行更新");
+            Shutdown();
+        }
+
         private void ExitApplication()
         {
             LogService.Info("========== FlowWatch 退出 ==========");
+            UpdateService.Instance.UpdateAvailable -= OnUpdateAvailable;
+            UpdateService.Instance.StopAutoCheck();
             LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
             ProcessTrafficService.Instance.Stop();
             TrafficHistoryService.Instance.Stop();

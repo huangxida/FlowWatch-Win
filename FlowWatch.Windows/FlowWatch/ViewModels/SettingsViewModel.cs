@@ -1,4 +1,5 @@
 using System;
+using System.Windows;
 using System.Windows.Input;
 using FlowWatch.Services;
 
@@ -10,18 +11,24 @@ namespace FlowWatch.ViewModels
         private bool _lockOnTop = true;
         private bool _pinToDesktop;
         private bool _autoLaunch = true;
+        private bool _autoCheckUpdate = true;
         private string _language = "auto";
         private string _layout = "horizontal";
         private string _displayMode = "speed";
         private string _fontFamily = "Segoe UI, Microsoft YaHei, sans-serif";
         private int _fontSize = 18;
         private int _speedColorMaxMbps = 100;
-        private string _trafficStartTimeText = "--";
         private bool _suppressPush;
+        private string _skippedVersion;
+        private bool _hasSkippedVersion;
+        private bool _isCheckingUpdate;
 
         public SettingsViewModel()
         {
-            ResetTrafficCommand = new RelayCommand(OnResetTraffic);
+            ResetTodayCommand = new RelayCommand(OnResetToday);
+            ResetAllCommand = new RelayCommand(OnResetAll);
+            CheckUpdateCommand = new RelayCommand(OnCheckUpdate, () => !_isCheckingUpdate);
+            ClearSkippedCommand = new RelayCommand(OnClearSkipped);
             SettingsService.Instance.SettingsChanged += OnSettingsChanged;
             LoadFromSettings();
         }
@@ -77,6 +84,25 @@ namespace FlowWatch.ViewModels
             {
                 if (SetProperty(ref _autoLaunch, value))
                     PushSettings();
+            }
+        }
+
+        public bool AutoCheckUpdate
+        {
+            get => _autoCheckUpdate;
+            set
+            {
+                if (SetProperty(ref _autoCheckUpdate, value))
+                {
+                    PushSettings();
+                    if (!_suppressPush)
+                    {
+                        if (value)
+                            UpdateService.Instance.StartAutoCheck();
+                        else
+                            UpdateService.Instance.StopAutoCheck();
+                    }
+                }
             }
         }
 
@@ -144,13 +170,30 @@ namespace FlowWatch.ViewModels
             }
         }
 
-        public string TrafficStartTimeText
+        public string CurrentVersion => UpdateService.Instance.GetCurrentVersion().ToString(3);
+
+        public string SkippedVersion
         {
-            get => _trafficStartTimeText;
-            set => SetProperty(ref _trafficStartTimeText, value);
+            get => _skippedVersion;
+            private set => SetProperty(ref _skippedVersion, value);
         }
 
-        public ICommand ResetTrafficCommand { get; }
+        public bool HasSkippedVersion
+        {
+            get => _hasSkippedVersion;
+            private set => SetProperty(ref _hasSkippedVersion, value);
+        }
+
+        public bool IsCheckingUpdate
+        {
+            get => _isCheckingUpdate;
+            private set => SetProperty(ref _isCheckingUpdate, value);
+        }
+
+        public ICommand CheckUpdateCommand { get; }
+        public ICommand ClearSkippedCommand { get; }
+        public ICommand ResetTodayCommand { get; }
+        public ICommand ResetAllCommand { get; }
 
         private void LoadFromSettings()
         {
@@ -160,13 +203,14 @@ namespace FlowWatch.ViewModels
             LockOnTop = s.LockOnTop;
             PinToDesktop = s.PinToDesktop;
             AutoLaunch = s.AutoLaunch;
+            AutoCheckUpdate = s.AutoCheckUpdate;
             Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode ?? "speed";
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
-            UpdateTrafficStartTime();
+            UpdateSkippedVersion(s.SkippedVersion);
             _suppressPush = false;
         }
 
@@ -183,6 +227,7 @@ namespace FlowWatch.ViewModels
                 s.LockOnTop = _lockOnTop;
                 s.PinToDesktop = _pinToDesktop;
                 s.AutoLaunch = _autoLaunch;
+                s.AutoCheckUpdate = _autoCheckUpdate;
                 s.Language = _language;
                 s.Layout = _layout;
                 s.DisplayMode = _displayMode;
@@ -207,26 +252,93 @@ namespace FlowWatch.ViewModels
             LockOnTop = s.LockOnTop;
             PinToDesktop = s.PinToDesktop;
             AutoLaunch = s.AutoLaunch;
+            AutoCheckUpdate = s.AutoCheckUpdate;
             Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode ?? "speed";
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
-            UpdateTrafficStartTime();
             _suppressPush = false;
         }
 
-        private void OnResetTraffic()
+        public void RefreshSkippedVersion()
         {
-            NetworkMonitorService.Instance.ResetTraffic();
-            UpdateTrafficStartTime();
+            UpdateSkippedVersion(SettingsService.Instance.Settings.SkippedVersion);
         }
 
-        private void UpdateTrafficStartTime()
+        private void UpdateSkippedVersion(string skipped)
         {
-            var dt = NetworkMonitorService.Instance.TrafficStartTime;
-            TrafficStartTimeText = dt.ToString("yyyy-MM-dd HH:mm:ss");
+            SkippedVersion = skipped;
+            HasSkippedVersion = !string.IsNullOrEmpty(skipped);
+        }
+
+        private async void OnCheckUpdate()
+        {
+            if (_isCheckingUpdate) return;
+            IsCheckingUpdate = true;
+            var loc = LocalizationService.Instance;
+            try
+            {
+                var info = await UpdateService.Instance.CheckForUpdateAsync();
+                if (info != null)
+                {
+                    var skipped = SettingsService.Instance.Settings.SkippedVersion;
+                    if (skipped == info.TagName)
+                    {
+                        MessageBox.Show(
+                            loc.Format("Update.AlreadyLatest", CurrentVersion),
+                            "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else
+                    {
+                        var app = Application.Current as App;
+                        app?.ShowUpdateWindowFromSettings(info);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show(
+                        loc.Format("Update.AlreadyLatest", CurrentVersion),
+                        "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch
+            {
+                MessageBox.Show(
+                    loc.Get("Update.CheckFailed"),
+                    "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                IsCheckingUpdate = false;
+            }
+        }
+
+        private void OnClearSkipped()
+        {
+            SettingsService.Instance.Update(s => s.SkippedVersion = null);
+            UpdateSkippedVersion(null);
+        }
+
+        private void OnResetToday()
+        {
+            var loc = LocalizationService.Instance;
+            var result = MessageBox.Show(
+                loc.Get("Settings.ResetTodayConfirm"),
+                "FlowWatch", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+                TrafficHistoryService.Instance.ResetToday();
+        }
+
+        private void OnResetAll()
+        {
+            var loc = LocalizationService.Instance;
+            var result = MessageBox.Show(
+                loc.Get("Settings.ResetAllConfirm"),
+                "FlowWatch", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+                TrafficHistoryService.Instance.ResetAll();
         }
 
         public void Cleanup()
