@@ -1,137 +1,38 @@
 # FlowWatch
 
-A lightweight, transparent overlay network speed monitor for Windows. Displays real-time upload/download speeds on your desktop with per-app traffic tracking and historical statistics.
+轻量级透明悬浮网速监控工具，支持按应用流量监控和历史流量统计。
 
-Built with C# WPF (.NET Framework 4.8), ~5 MB binary, <50 MB memory usage.
+基于 C# WPF (.NET Framework 4.8) 构建，~5 MB 体积，<50 MB 内存占用。
 
-**[English](#features) | [中文](#功能)**
+**[English](README.en.md) | 中文**
 
 ---
 
-## Screenshots
+## 截图
 
 <table>
 <tr>
-<td align="center"><b>Settings (EN)</b></td>
-<td align="center"><b>Settings (ZH)</b></td>
+<td align="center"><b>设置 — 常规</b></td>
+<td align="center"><b>设置 — 外观</b></td>
 </tr>
 <tr>
-<td><img src="assets/screenshots/settings-general-en.png" width="320"/></td>
 <td><img src="assets/screenshots/settings-general-zh.png" width="320"/></td>
-</tr>
-<tr>
-<td><img src="assets/screenshots/settings-appearance-en.png" width="320"/></td>
 <td><img src="assets/screenshots/settings-appearance-zh.png" width="320"/></td>
 </tr>
 </table>
 
 <table>
 <tr>
-<td align="center"><b>Traffic Statistics</b></td>
-<td align="center"><b>App Traffic (Realtime)</b></td>
-<td align="center"><b>App Traffic (Daily)</b></td>
+<td align="center"><b>流量统计</b></td>
+<td align="center"><b>应用流量（实时）</b></td>
+<td align="center"><b>应用流量（按日）</b></td>
 </tr>
 <tr>
-<td><img src="assets/screenshots/statistics-en.png" width="280"/></td>
-<td><img src="assets/screenshots/app-traffic-realtime-en.png" width="280"/></td>
-<td><img src="assets/screenshots/app-traffic-daily-en.png" width="280"/></td>
+<td><img src="assets/screenshots/statistics-zh.png" width="280"/></td>
+<td><img src="assets/screenshots/app-traffic-realtime-zh.png" width="280"/></td>
+<td><img src="assets/screenshots/app-traffic-daily-zh.png" width="280"/></td>
 </tr>
 </table>
-
-## Features
-
-- **Real-time overlay** — Transparent floating window showing upload/download speeds with color-coded gradients
-- **Per-app traffic monitoring** — Track network usage by process with ETW (Event Tracing for Windows), view realtime speeds or daily/weekly/monthly totals
-- **Traffic statistics** — Daily/weekly/monthly traffic history with bar charts, data retained for 90 days
-- **System tray** — Right-click menu for quick access to Settings, Statistics, App Traffic, Pin/Lock, and Exit
-- **Lock on Top** — Pin the overlay on top with click-through; unlock to drag and reposition
-- **Pin to Desktop** — Attach the overlay to the desktop layer (stays visible on Show Desktop), mutually exclusive with Lock on Top
-- **Layout** — Horizontal or vertical arrangement for screen edge placement
-- **Display modes** — Speed only, usage only, or speed + usage combined
-- **Appearance** — Customizable font family, font size (11–19px), and speed color gradient threshold (1–1000 Mbps)
-- **Auto launch** — Starts on login via Windows Task Scheduler (runs elevated)
-- **Language** — English, Chinese, or auto-detect from system locale
-- **Single instance** — Prevents duplicate launches
-
-## Requirements
-
-- Windows 10 or later (x64)
-- **Administrator privileges** required for per-app traffic monitoring (ETW kernel events)
-
-## Installation
-
-Download the latest ZIP from [Releases](../../releases), extract, and run `FlowWatch.exe`.
-
-## Build from Source
-
-Requires Visual Studio 2019+ or MSBuild + NuGet CLI.
-
-```bash
-cd FlowWatch.Windows
-nuget restore FlowWatch.sln
-msbuild FlowWatch.sln /p:Configuration=Release /p:Platform=x64
-```
-
-Or use the build script to produce a distributable ZIP:
-
-```powershell
-cd FlowWatch.Windows
-.\build.ps1 -Version 1.0.0
-```
-
-Output: `FlowWatch.Windows\FlowWatch\bin\x64\Release\`
-
-## Project Structure
-
-```
-FlowWatch.Windows/
-├── FlowWatch.sln
-├── build.ps1 / build.bat
-└── FlowWatch/
-    ├── App.xaml(.cs)              # Entry point, tray icon, single instance
-    ├── Services/
-    │   ├── NetworkMonitorService  # System-wide speed polling
-    │   ├── ProcessTrafficService  # Per-app ETW traffic capture
-    │   ├── TrafficHistoryService  # Daily traffic persistence
-    │   ├── SettingsService        # JSON settings (atomic write)
-    │   ├── LocalizationService    # i18n (EN/ZH dynamic switch)
-    │   ├── DesktopPinService      # Pin overlay to desktop layer
-    │   └── AutoLaunchService      # Task Scheduler auto-start
-    ├── ViewModels/                # MVVM data binding
-    ├── Views/
-    │   ├── OverlayWindow          # Floating speed display
-    │   ├── SettingsWindow         # Configuration UI
-    │   ├── StatisticsWindow       # Traffic history charts
-    │   └── AppTrafficWindow       # Per-app traffic details
-    ├── Models/                    # Data models
-    ├── Helpers/                   # Win32 interop, formatting, color gradient
-    └── Resources/
-        ├── Styles/                # WPF styles
-        └── Strings/               # en-US.xaml, zh-CN.xaml
-```
-
-## Configuration
-
-Settings are stored at `%LOCALAPPDATA%\FlowWatch\settings.json`.
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Language | auto | `auto` / `en` / `zh` |
-| RefreshInterval | 1000 ms | Data polling interval (1–10s) |
-| LockOnTop | true | Lock overlay on top with click-through |
-| PinToDesktop | false | Pin to desktop layer (exclusive with LockOnTop) |
-| AutoLaunch | true | Start on system login |
-| Layout | horizontal | `horizontal` / `vertical` |
-| DisplayMode | speed | `speed` / `usage` / `both` |
-| FontFamily | Segoe UI, Microsoft YaHei | Custom font stack |
-| FontSize | 18 | Overlay font size (11–19px) |
-| SpeedColorMaxMbps | 100 | White-to-red gradient threshold |
-
----
-
-# FlowWatch (中文)
-
-轻量级透明悬浮网速监控工具，支持按应用流量监控和历史流量统计。
 
 ## 功能
 
@@ -148,19 +49,6 @@ Settings are stored at `%LOCALAPPDATA%\FlowWatch\settings.json`.
 - **语言切换** — 中文、英文、跟随系统，运行时即时切换
 - **单实例运行** — 避免重复启动
 
-<table>
-<tr>
-<td align="center"><b>流量统计</b></td>
-<td align="center"><b>应用流量（实时）</b></td>
-<td align="center"><b>应用流量（按日）</b></td>
-</tr>
-<tr>
-<td><img src="assets/screenshots/statistics-zh.png" width="280"/></td>
-<td><img src="assets/screenshots/app-traffic-realtime-zh.png" width="280"/></td>
-<td><img src="assets/screenshots/app-traffic-daily-zh.png" width="280"/></td>
-</tr>
-</table>
-
 ## 系统要求
 
 - Windows 10 或更高版本（x64）
@@ -170,10 +58,67 @@ Settings are stored at `%LOCALAPPDATA%\FlowWatch\settings.json`.
 
 从 [Releases](../../releases) 下载最新 ZIP，解压后运行 `FlowWatch.exe`。
 
-## 构建
+## 从源码构建
+
+需要 Visual Studio 2019+ 或 MSBuild + NuGet CLI。
 
 ```bash
 cd FlowWatch.Windows
 nuget restore FlowWatch.sln
 msbuild FlowWatch.sln /p:Configuration=Release /p:Platform=x64
 ```
+
+或使用构建脚本生成可分发 ZIP：
+
+```powershell
+cd FlowWatch.Windows
+.\build.ps1 -Version 1.0.0
+```
+
+输出目录：`FlowWatch.Windows\FlowWatch\bin\x64\Release\`
+
+## 项目结构
+
+```
+FlowWatch.Windows/
+├── FlowWatch.sln
+├── build.ps1 / build.bat
+└── FlowWatch/
+    ├── App.xaml(.cs)              # 入口、托盘图标、单实例
+    ├── Services/
+    │   ├── NetworkMonitorService  # 系统网速轮询
+    │   ├── ProcessTrafficService  # 按应用 ETW 流量采集
+    │   ├── TrafficHistoryService  # 每日流量持久化
+    │   ├── SettingsService        # JSON 设置（原子写入）
+    │   ├── LocalizationService    # 国际化（中/英动态切换）
+    │   ├── DesktopPinService      # 固定到桌面层级
+    │   └── AutoLaunchService      # 任务计划程序自启
+    ├── ViewModels/                # MVVM 数据绑定
+    ├── Views/
+    │   ├── OverlayWindow          # 悬浮网速显示
+    │   ├── SettingsWindow         # 设置界面
+    │   ├── StatisticsWindow       # 流量统计图表
+    │   └── AppTrafficWindow       # 按应用流量详情
+    ├── Models/                    # 数据模型
+    ├── Helpers/                   # Win32 互操作、格式化、颜色渐变
+    └── Resources/
+        ├── Styles/                # WPF 样式
+        └── Strings/               # en-US.xaml, zh-CN.xaml
+```
+
+## 配置
+
+设置保存在 `%LOCALAPPDATA%\FlowWatch\settings.json`。
+
+| 设置项 | 默认值 | 说明 |
+|--------|--------|------|
+| Language | auto | `auto` / `en` / `zh` |
+| RefreshInterval | 1000 ms | 数据轮询间隔（1–10 秒） |
+| LockOnTop | true | 锁定置顶并穿透点击 |
+| PinToDesktop | false | 固定到桌面层级（与置顶互斥） |
+| AutoLaunch | true | 开机自启 |
+| Layout | horizontal | `horizontal` / `vertical` |
+| DisplayMode | speed | `speed` / `usage` / `both` |
+| FontFamily | Segoe UI, Microsoft YaHei | 自定义字体栈 |
+| FontSize | 18 | 悬浮窗字号（11–19px） |
+| SpeedColorMaxMbps | 100 | 白到红渐变阈值 |
