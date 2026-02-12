@@ -7,13 +7,20 @@ using FlowWatch.Models;
 
 namespace FlowWatch.Services
 {
+    /// <summary>
+    /// 流量历史记录服务，负责按日累计并持久化流量数据
+    /// </summary>
     public class TrafficHistoryService
     {
         private static readonly Lazy<TrafficHistoryService> _instance = new Lazy<TrafficHistoryService>(() => new TrafficHistoryService());
         public static TrafficHistoryService Instance => _instance.Value;
 
+        private const string DateFormat = "yyyy-MM-dd";
+
         private readonly string _dataDir;
         private readonly string _dataPath;
+        private readonly object _saveLock = new object();
+
         private TrafficHistory _history;
         private DailyTrafficRecord _todayRecord;
         private DateTime _currentDate;
@@ -37,10 +44,10 @@ namespace FlowWatch.Services
             Load();
 
             _currentDate = DateTime.Now.Date;
-            _todayRecord = _history.Records.FirstOrDefault(r => r.Date == _currentDate.ToString("yyyy-MM-dd"));
+            _todayRecord = _history.Records.FirstOrDefault(r => r.Date == FormatDate(_currentDate));
             if (_todayRecord == null)
             {
-                _todayRecord = new DailyTrafficRecord { Date = _currentDate.ToString("yyyy-MM-dd") };
+                _todayRecord = new DailyTrafficRecord { Date = FormatDate(_currentDate) };
                 _history.Records.Add(_todayRecord);
             }
 
@@ -78,10 +85,10 @@ namespace FlowWatch.Services
             {
                 Save();
                 _currentDate = today;
-                _todayRecord = _history.Records.FirstOrDefault(r => r.Date == _currentDate.ToString("yyyy-MM-dd"));
+                _todayRecord = _history.Records.FirstOrDefault(r => r.Date == FormatDate(_currentDate));
                 if (_todayRecord == null)
                 {
-                    _todayRecord = new DailyTrafficRecord { Date = _currentDate.ToString("yyyy-MM-dd") };
+                    _todayRecord = new DailyTrafficRecord { Date = FormatDate(_currentDate) };
                     _history.Records.Add(_todayRecord);
                 }
                 // 跨天后重置基线，下次事件开始累加
@@ -122,39 +129,88 @@ namespace FlowWatch.Services
                     _history = new TrafficHistory();
                 }
             }
+            catch (JsonException)
+            {
+                // JSON 反序列化失败，保留损坏的文件作为备份
+                PreserveCorruptedFile();
+                _history = new TrafficHistory();
+            }
+            catch (IOException)
+            {
+                // 文件 I/O 错误
+                _history = new TrafficHistory();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // 权限不足
+                _history = new TrafficHistory();
+            }
+        }
+
+        private void PreserveCorruptedFile()
+        {
+            try
+            {
+                if (File.Exists(_dataPath))
+                {
+                    var corruptedPath = _dataPath + ".corrupted";
+                    // 如果已有 .corrupted 文件，先删除
+                    if (File.Exists(corruptedPath))
+                    {
+                        File.Delete(corruptedPath);
+                    }
+                    File.Move(_dataPath, corruptedPath);
+                }
+            }
             catch
             {
-                _history = new TrafficHistory();
+                // 备份失败时静默处理，避免影响程序启动
             }
         }
 
         private void Save()
         {
-            try
+            lock (_saveLock)
             {
-                if (!Directory.Exists(_dataDir))
-                    Directory.CreateDirectory(_dataDir);
-
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                var json = JsonSerializer.Serialize(_history, options);
-
-                var tempPath = _dataPath + ".tmp";
-                File.WriteAllText(tempPath, json);
-
-                if (File.Exists(_dataPath))
+                try
                 {
-                    var backupPath = _dataPath + ".bak";
-                    File.Replace(tempPath, _dataPath, backupPath);
+                    if (!Directory.Exists(_dataDir))
+                        Directory.CreateDirectory(_dataDir);
+
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    var json = JsonSerializer.Serialize(_history, options);
+
+                    var tempPath = _dataPath + ".tmp";
+                    File.WriteAllText(tempPath, json);
+
+                    if (File.Exists(_dataPath))
+                    {
+                        var backupPath = _dataPath + ".bak";
+                        File.Replace(tempPath, _dataPath, backupPath);
+                    }
+                    else
+                    {
+                        File.Move(tempPath, _dataPath);
+                    }
                 }
-                else
+                catch (IOException)
                 {
-                    File.Move(tempPath, _dataPath);
+                    // 文件 I/O 错误，静默失败，崩溃最多丢 60 秒数据
                 }
-            }
-            catch
-            {
-                // 静默失败，崩溃最多丢 60 秒数据
+                catch (UnauthorizedAccessException)
+                {
+                    // 权限不足
+                }
+                catch (JsonException)
+                {
+                    // JSON 序列化错误（理论上不应发生）
+                }
             }
         }
+
+        /// <summary>
+        /// 格式化日期为 yyyy-MM-dd 格式
+        /// </summary>
+        private string FormatDate(DateTime date) => date.ToString(DateFormat);
     }
 }
