@@ -50,6 +50,10 @@ Built with C# WPF (.NET Framework 4.8), ~5 MB binary, <50 MB memory usage.
 - **In-app update** — Automatically checks GitHub Releases for new versions; supports download & install, skip version, and remind later (24-hour check interval)
 - **Single instance** — Prevents duplicate launches
 
+## Other Platforms
+
+- **macOS version**: [FlowWatch for Mac](https://github.com/huangxida/FlowWatch)
+
 ## Requirements
 
 - Windows 10 or later (x64)
