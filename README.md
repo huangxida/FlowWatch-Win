@@ -50,6 +50,10 @@
 - **应用内更新** — 自动检查 GitHub Releases 新版本，支持下载安装、跳过版本、稍后提醒（24 小时检查间隔）
 - **单实例运行** — 避免重复启动
 
+## 其他平台
+
+- **macOS 版本**：[FlowWatch for Mac](https://github.com/huangxida/FlowWatch)
+
 ## 系统要求
 
 - Windows 10 或更高版本（x64）
