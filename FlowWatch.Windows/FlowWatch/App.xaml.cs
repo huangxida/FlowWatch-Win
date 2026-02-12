@@ -52,6 +52,9 @@ namespace FlowWatch
 
             // Start network monitoring
             NetworkMonitorService.Instance.Start(settings.RefreshInterval);
+
+            // Start traffic history recording
+            TrafficHistoryService.Instance.Start();
         }
 
         private void CreateTrayIcon()
@@ -157,6 +160,7 @@ namespace FlowWatch
 
         private void ExitApplication()
         {
+            TrafficHistoryService.Instance.Stop();
             NetworkMonitorService.Instance.Stop();
             SettingsService.Instance.SettingsChanged -= OnSettingsChangedForTray;
             _overlayWindow?.Cleanup();
