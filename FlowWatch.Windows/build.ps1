@@ -1,7 +1,8 @@
 param(
     [string]$Version = "1.0.0",
     [string]$Configuration = "Release",
-    [string]$Platform = "x64"
+    [string]$Platform = "x64",
+    [switch]$SkipBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,18 +13,23 @@ Write-Host "Version: $Version"
 Write-Host "Configuration: $Configuration"
 Write-Host "Platform: $Platform"
 
-# Restore NuGet packages
-Write-Host "`n--- Restoring NuGet packages ---" -ForegroundColor Yellow
 $slnPath = Join-Path $projectDir "FlowWatch.sln"
-$nuget = Join-Path $projectDir "nuget.exe"
-& $nuget restore $slnPath
-if ($LASTEXITCODE -ne 0) { throw "NuGet restore failed" }
 
-# Build
-Write-Host "`n--- Building ---" -ForegroundColor Yellow
-$msbuild = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
-& $msbuild $slnPath /p:Configuration=$Configuration /p:Platform=$Platform /v:minimal
-if ($LASTEXITCODE -ne 0) { throw "Build failed" }
+if (-not $SkipBuild) {
+    # Restore NuGet packages
+    Write-Host "`n--- Restoring NuGet packages ---" -ForegroundColor Yellow
+    $nuget = Join-Path $projectDir "nuget.exe"
+    & $nuget restore $slnPath
+    if ($LASTEXITCODE -ne 0) { throw "NuGet restore failed" }
+
+    # Build
+    Write-Host "`n--- Building ---" -ForegroundColor Yellow
+    $msbuild = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
+    & $msbuild $slnPath /p:Configuration=$Configuration /p:Platform=$Platform /v:minimal
+    if ($LASTEXITCODE -ne 0) { throw "Build failed" }
+} else {
+    Write-Host "`n--- Skipping restore & build (SkipBuild) ---" -ForegroundColor Yellow
+}
 
 # Package
 $binDir = Join-Path $projectDir "FlowWatch\bin\$Platform\$Configuration"
