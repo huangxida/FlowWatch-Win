@@ -38,7 +38,7 @@ jobs:
 
       - name: Package
         shell: pwsh
-        run: .\build.ps1 -Version ${{ steps.version.outputs.VERSION }}
+        run: .\build.ps1 -Version ${{ steps.version.outputs.VERSION }} -SkipBuild
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
