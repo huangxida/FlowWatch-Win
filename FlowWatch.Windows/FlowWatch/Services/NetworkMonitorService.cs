@@ -16,6 +16,8 @@ namespace FlowWatch.Services
         private TrafficUsage _traffic;
         private bool _firstPoll = true;
         private DateTime _trafficStartTime;
+        private long _downloadOffset;
+        private long _uploadOffset;
 
         public event Action<NetworkStats> StatsUpdated;
 
@@ -66,11 +68,22 @@ namespace FlowWatch.Services
             _currentInterface = NetworkInterfaceHelper.GetActiveInterface();
             _traffic = null;
             _firstPoll = true;
+            _downloadOffset = 0;
+            _uploadOffset = 0;
 
             if (_currentInterface != null)
             {
                 InitBaseline();
             }
+        }
+
+        /// <summary>
+        /// 设置流量偏移量，用于恢复历史累计数据
+        /// </summary>
+        public void SetTrafficOffset(long downloadOffset, long uploadOffset)
+        {
+            _downloadOffset = downloadOffset;
+            _uploadOffset = uploadOffset;
         }
 
         private void InitBaseline()
@@ -144,8 +157,8 @@ namespace FlowWatch.Services
 
                 _firstPoll = false;
 
-                var totalDown = Math.Max(0, currentRx - _traffic.BaselineReceived);
-                var totalUp = Math.Max(0, currentTx - _traffic.BaselineSent);
+                var totalDown = Math.Max(0, currentRx - _traffic.BaselineReceived) + _downloadOffset;
+                var totalUp = Math.Max(0, currentTx - _traffic.BaselineSent) + _uploadOffset;
 
                 _traffic.LastReceived = currentRx;
                 _traffic.LastSent = currentTx;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -41,7 +42,9 @@ namespace FlowWatch.Services
 
         public void Start()
         {
+            LogService.Info("TrafficHistoryService.Start() 开始");
             Load();
+            LogService.Info($"历史数据加载完成，共 {_history.Records.Count} 条记录");
 
             _currentDate = DateTime.Now.Date;
             _todayRecord = _history.Records.FirstOrDefault(r => r.Date == FormatDate(_currentDate));
@@ -49,9 +52,19 @@ namespace FlowWatch.Services
             {
                 _todayRecord = new DailyTrafficRecord { Date = FormatDate(_currentDate) };
                 _history.Records.Add(_todayRecord);
+                LogService.Info($"创建今日记录: {_todayRecord.Date}");
+            }
+            else
+            {
+                LogService.Info($"找到今日记录: {_todayRecord.Date}, 下载={_todayRecord.DownloadBytes}, 上传={_todayRecord.UploadBytes}");
             }
 
             _hasBaseline = false;
+
+            // 将历史累计数据设为偏移量，使 UI 启动时即显示当天已有流量
+            NetworkMonitorService.Instance.SetTrafficOffset(
+                _todayRecord.DownloadBytes,
+                _todayRecord.UploadBytes);
 
             NetworkMonitorService.Instance.StatsUpdated += OnStatsUpdated;
 
@@ -61,10 +74,12 @@ namespace FlowWatch.Services
             };
             _saveTimer.Tick += (s, e) => Save();
             _saveTimer.Start();
+            LogService.Info("TrafficHistoryService.Start() 完成，定时保存已启动");
         }
 
         public void Stop()
         {
+            LogService.Info("TrafficHistoryService.Stop() 开始");
             NetworkMonitorService.Instance.StatsUpdated -= OnStatsUpdated;
 
             if (_saveTimer != null)
@@ -74,6 +89,7 @@ namespace FlowWatch.Services
             }
 
             Save();
+            LogService.Info("TrafficHistoryService.Stop() 完成");
         }
 
         private void OnStatsUpdated(NetworkStats stats)
@@ -83,6 +99,7 @@ namespace FlowWatch.Services
             // 跨天处理
             if (today != _currentDate)
             {
+                LogService.Info($"检测到跨天: {FormatDate(_currentDate)} -> {FormatDate(today)}");
                 Save();
                 _currentDate = today;
                 _todayRecord = _history.Records.FirstOrDefault(r => r.Date == FormatDate(_currentDate));
@@ -117,32 +134,36 @@ namespace FlowWatch.Services
 
         private void Load()
         {
+            LogService.Info($"加载流量历史文件: {_dataPath}");
             try
             {
                 if (File.Exists(_dataPath))
                 {
                     var json = File.ReadAllText(_dataPath);
+                    LogService.Info($"文件读取成功，大小={json.Length} 字符");
                     _history = JsonSerializer.Deserialize<TrafficHistory>(json) ?? new TrafficHistory();
+                    LogService.Info($"反序列化成功，记录数={_history.Records.Count}");
                 }
                 else
                 {
+                    LogService.Info("历史文件不存在，创建空记录");
                     _history = new TrafficHistory();
                 }
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
-                // JSON 反序列化失败，保留损坏的文件作为备份
+                LogService.Error("JSON 反序列化失败", ex);
                 PreserveCorruptedFile();
                 _history = new TrafficHistory();
             }
-            catch (IOException)
+            catch (IOException ex)
             {
-                // 文件 I/O 错误
+                LogService.Error("文件 I/O 错误", ex);
                 _history = new TrafficHistory();
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
-                // 权限不足
+                LogService.Error("权限不足", ex);
                 _history = new TrafficHistory();
             }
         }
@@ -193,19 +214,26 @@ namespace FlowWatch.Services
                         File.Move(tempPath, _dataPath);
                     }
                 }
-                catch (IOException)
+                catch (IOException ex)
                 {
-                    // 文件 I/O 错误，静默失败，崩溃最多丢 60 秒数据
+                    LogService.Error("保存流量数据 I/O 错误", ex);
                 }
-                catch (UnauthorizedAccessException)
+                catch (UnauthorizedAccessException ex)
                 {
-                    // 权限不足
+                    LogService.Error("保存流量数据权限不足", ex);
                 }
-                catch (JsonException)
+                catch (JsonException ex)
                 {
-                    // JSON 序列化错误（理论上不应发生）
+                    LogService.Error("保存流量数据序列化错误", ex);
                 }
             }
+        }
+
+        public List<DailyTrafficRecord> GetRecords()
+        {
+            if (_history == null)
+                return new List<DailyTrafficRecord>();
+            return _history.Records.ToList();
         }
 
         /// <summary>
