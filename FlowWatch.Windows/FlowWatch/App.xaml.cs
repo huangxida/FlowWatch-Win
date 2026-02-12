@@ -18,6 +18,7 @@ namespace FlowWatch
         private OverlayWindow _overlayWindow;
         private SettingsWindow _settingsWindow;
         private StatisticsWindow _statisticsWindow;
+        private AppTrafficWindow _appTrafficWindow;
         private MenuItem _pinItem;
         private MenuItem _lockItem;
 
@@ -93,6 +94,16 @@ namespace FlowWatch
                 _statisticsWindow = new StatisticsWindow();
                 LogService.Info("统计窗口创建完成");
 
+                // Start per-process traffic monitoring (ETW)
+                LogService.Info("启动应用流量监控服务...");
+                ProcessTrafficService.Instance.Start();
+                LogService.Info("应用流量监控服务已启动");
+
+                // Create app traffic window (hidden, after ProcessTrafficService started)
+                LogService.Info("创建应用流量窗口...");
+                _appTrafficWindow = new AppTrafficWindow();
+                LogService.Info("应用流量窗口创建完成");
+
                 LogService.Info("========== 启动流程完成 ==========");
             }
             catch (Exception ex)
@@ -142,6 +153,9 @@ namespace FlowWatch
             var statisticsItem = new MenuItem { Header = "流量统计" };
             statisticsItem.Click += (s, ev) => ShowStatistics();
 
+            var appTrafficItem = new MenuItem { Header = "应用流量" };
+            appTrafficItem.Click += (s, ev) => ShowAppTraffic();
+
             _pinItem = new MenuItem
             {
                 Header = "固定桌面",
@@ -179,6 +193,7 @@ namespace FlowWatch
 
             contextMenu.Items.Add(settingsItem);
             contextMenu.Items.Add(statisticsItem);
+            contextMenu.Items.Add(appTrafficItem);
             contextMenu.Items.Add(_pinItem);
             contextMenu.Items.Add(_lockItem);
             contextMenu.Items.Add(separator);
@@ -215,15 +230,24 @@ namespace FlowWatch
             _statisticsWindow.Show();
         }
 
+        private void ShowAppTraffic()
+        {
+            if (_appTrafficWindow == null)
+                _appTrafficWindow = new AppTrafficWindow();
+            _appTrafficWindow.Show();
+        }
+
         private void ExitApplication()
         {
             LogService.Info("========== FlowWatch 退出 ==========");
+            ProcessTrafficService.Instance.Stop();
             TrafficHistoryService.Instance.Stop();
             NetworkMonitorService.Instance.Stop();
             SettingsService.Instance.SettingsChanged -= OnSettingsChangedForTray;
             _overlayWindow?.Cleanup();
             _settingsWindow?.ForceClose();
             _statisticsWindow?.ForceClose();
+            _appTrafficWindow?.ForceClose();
 
             _trayIcon?.Dispose();
             _trayIcon = null;
