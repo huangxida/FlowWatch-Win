@@ -1,0 +1,81 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Tray Menu -->
+    <sys:String x:Key="Tray.Tooltip">FlowWatch Network Monitor</sys:String>
+    <sys:String x:Key="Tray.Settings">Settings</sys:String>
+    <sys:String x:Key="Tray.Statistics">Statistics</sys:String>
+    <sys:String x:Key="Tray.AppTraffic">App Traffic</sys:String>
+    <sys:String x:Key="Tray.PinToDesktop">Pin to Desktop</sys:String>
+    <sys:String x:Key="Tray.LockOnTop">Lock on Top</sys:String>
+    <sys:String x:Key="Tray.Exit">Exit</sys:String>
+
+    <!-- Common Messages -->
+    <sys:String x:Key="Common.AlreadyRunning">FlowWatch is already running.</sys:String>
+    <sys:String x:Key="Common.StartupFailed">Startup failed: {0}</sys:String>
+
+    <!-- Settings Window -->
+    <sys:String x:Key="Settings.WindowTitle">FlowWatch Settings</sys:String>
+    <sys:String x:Key="Settings.Header">Settings</sys:String>
+    <sys:String x:Key="Settings.General">General</sys:String>
+    <sys:String x:Key="Settings.Language">Language</sys:String>
+    <sys:String x:Key="Settings.LanguageAuto">System Default</sys:String>
+    <sys:String x:Key="Settings.RefreshRate">Refresh Rate</sys:String>
+    <sys:String x:Key="Settings.RefreshRateHint">Data update interval, lower is more real-time</sys:String>
+    <sys:String x:Key="Settings.AutoLaunch">Auto Launch</sys:String>
+    <sys:String x:Key="Settings.AutoLaunchHint">Run automatically on system login</sys:String>
+    <sys:String x:Key="Settings.Window">Window</sys:String>
+    <sys:String x:Key="Settings.LockOnTop">Lock on Top</sys:String>
+    <sys:String x:Key="Settings.LockOnTopHint">Stay on top with click-through, unlock to drag</sys:String>
+    <sys:String x:Key="Settings.PinToDesktop">Pin to Desktop</sys:String>
+    <sys:String x:Key="Settings.PinToDesktopHint">Pin to desktop layer, exclusive with lock on top</sys:String>
+    <sys:String x:Key="Settings.Layout">Layout</sys:String>
+    <sys:String x:Key="Settings.LayoutHorizontal">Horizontal</sys:String>
+    <sys:String x:Key="Settings.LayoutVertical">Vertical</sys:String>
+    <sys:String x:Key="Settings.DisplayMode">Display Mode</sys:String>
+    <sys:String x:Key="Settings.DisplaySpeed">Speed</sys:String>
+    <sys:String x:Key="Settings.DisplayUsage">Usage</sys:String>
+    <sys:String x:Key="Settings.DisplayBoth">Speed+Usage</sys:String>
+    <sys:String x:Key="Settings.Appearance">Appearance</sys:String>
+    <sys:String x:Key="Settings.Font">Font</sys:String>
+    <sys:String x:Key="Settings.FontPreset">Font Presets...</sys:String>
+    <sys:String x:Key="Settings.FontSize">Font Size</sys:String>
+    <sys:String x:Key="Settings.ColorMax">Color Max</sys:String>
+    <sys:String x:Key="Settings.ColorMaxHint">Threshold for white-to-red speed gradient</sys:String>
+    <sys:String x:Key="Settings.TrafficStats">Traffic Statistics</sys:String>
+    <sys:String x:Key="Settings.StartTime">Start Time</sys:String>
+    <sys:String x:Key="Settings.StartTimeHint">Traffic counted from app start, resets on close</sys:String>
+    <sys:String x:Key="Settings.ResetStats">Reset Statistics</sys:String>
+
+    <!-- Statistics Window -->
+    <sys:String x:Key="Stats.WindowTitle">FlowWatch Statistics</sys:String>
+    <sys:String x:Key="Stats.Header">Statistics</sys:String>
+    <sys:String x:Key="Stats.Day">Day</sys:String>
+    <sys:String x:Key="Stats.Week">Week</sys:String>
+    <sys:String x:Key="Stats.Month">Month</sys:String>
+    <sys:String x:Key="Stats.Summary">Summary</sys:String>
+    <sys:String x:Key="Stats.TotalDownload" xml:space="preserve"> Total Download</sys:String>
+    <sys:String x:Key="Stats.TotalUpload" xml:space="preserve"> Total Upload</sys:String>
+    <sys:String x:Key="Stats.DailyDetail">Daily Detail</sys:String>
+    <sys:String x:Key="Stats.PeriodToday">Today</sys:String>
+    <sys:String x:Key="Stats.PeriodWeek">This Week {0} - {1}</sys:String>
+    <sys:String x:Key="Stats.PeriodMonth">{0}/{1}</sys:String>
+
+    <!-- App Traffic Window -->
+    <sys:String x:Key="AppTraffic.WindowTitle">FlowWatch App Traffic</sys:String>
+    <sys:String x:Key="AppTraffic.Header">App Traffic</sys:String>
+    <sys:String x:Key="AppTraffic.Realtime">Realtime</sys:String>
+    <sys:String x:Key="AppTraffic.Day">Day</sys:String>
+    <sys:String x:Key="AppTraffic.Week">Week</sys:String>
+    <sys:String x:Key="AppTraffic.Month">Month</sys:String>
+    <sys:String x:Key="AppTraffic.Summary">Summary</sys:String>
+    <sys:String x:Key="AppTraffic.TotalDownload" xml:space="preserve"> Total Download</sys:String>
+    <sys:String x:Key="AppTraffic.TotalUpload" xml:space="preserve"> Total Upload</sys:String>
+    <sys:String x:Key="AppTraffic.AppDetail">App Detail</sys:String>
+    <sys:String x:Key="AppTraffic.PeriodRealtime">Realtime Speed</sys:String>
+    <sys:String x:Key="AppTraffic.PeriodToday">Today</sys:String>
+    <sys:String x:Key="AppTraffic.PeriodWeek">This Week {0} - {1}</sys:String>
+    <sys:String x:Key="AppTraffic.PeriodMonth">{0}/{1}</sys:String>
+
+</ResourceDictionary>

@@ -10,6 +10,7 @@ namespace FlowWatch.ViewModels
         private bool _lockOnTop = true;
         private bool _pinToDesktop;
         private bool _autoLaunch = true;
+        private string _language = "auto";
         private string _layout = "horizontal";
         private string _displayMode = "speed";
         private string _fontFamily = "Segoe UI, Microsoft YaHei, sans-serif";
@@ -79,6 +80,20 @@ namespace FlowWatch.ViewModels
             }
         }
 
+        public string Language
+        {
+            get => _language;
+            set
+            {
+                if (SetProperty(ref _language, value))
+                {
+                    if (!_suppressPush)
+                        LocalizationService.Instance.ApplyLanguage(value);
+                    PushSettings();
+                }
+            }
+        }
+
         public string Layout
         {
             get => _layout;
@@ -145,6 +160,7 @@ namespace FlowWatch.ViewModels
             LockOnTop = s.LockOnTop;
             PinToDesktop = s.PinToDesktop;
             AutoLaunch = s.AutoLaunch;
+            Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode ?? "speed";
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
@@ -167,6 +183,7 @@ namespace FlowWatch.ViewModels
                 s.LockOnTop = _lockOnTop;
                 s.PinToDesktop = _pinToDesktop;
                 s.AutoLaunch = _autoLaunch;
+                s.Language = _language;
                 s.Layout = _layout;
                 s.DisplayMode = _displayMode;
                 s.FontFamily = _fontFamily;
@@ -190,6 +207,7 @@ namespace FlowWatch.ViewModels
             LockOnTop = s.LockOnTop;
             PinToDesktop = s.PinToDesktop;
             AutoLaunch = s.AutoLaunch;
+            Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode ?? "speed";
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
