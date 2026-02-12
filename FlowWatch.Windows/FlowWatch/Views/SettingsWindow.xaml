@@ -154,13 +154,13 @@
 
                     <Border Style="{StaticResource DividerStyle}"/>
 
-                    <!-- Pin to desktop -->
+                    <!-- Auto hide -->
                     <DockPanel Margin="0,10,0,10">
                         <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Settings.PinToDesktop}" Style="{StaticResource FieldLabelStyle}"/>
-                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.PinToDesktopHint}"/>
+                            <TextBlock Text="{DynamicResource Settings.AutoHide}" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.AutoHideHint}"/>
                         </StackPanel>
-                        <CheckBox IsChecked="{Binding PinToDesktop}"
+                        <CheckBox IsChecked="{Binding AutoHide}"
                                   Style="{StaticResource ToggleSwitchStyle}"
                                   DockPanel.Dock="Right" HorizontalAlignment="Right"
                                   VerticalAlignment="Center"/>

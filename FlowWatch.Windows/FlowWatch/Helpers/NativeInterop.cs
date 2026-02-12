@@ -4,6 +4,13 @@ using System.Text;
 
 namespace FlowWatch.Helpers
 {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
     public static class NativeInterop
     {
         public const int GWL_EXSTYLE = -20;
@@ -62,6 +69,10 @@ namespace FlowWatch.Helpers
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetCursorPos(out POINT lpPoint);
 
         public static string GetClassNameString(IntPtr hWnd)
         {

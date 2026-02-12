@@ -9,7 +9,7 @@ namespace FlowWatch.ViewModels
     {
         private int _refreshIntervalSeconds = 1;
         private bool _lockOnTop = true;
-        private bool _pinToDesktop;
+        private bool _autoHide;
         private bool _autoLaunch = true;
         private bool _autoCheckUpdate = true;
         private string _language = "auto";
@@ -49,31 +49,17 @@ namespace FlowWatch.ViewModels
             set
             {
                 if (SetProperty(ref _lockOnTop, value))
-                {
-                    if (value && _pinToDesktop)
-                    {
-                        _pinToDesktop = false;
-                        OnPropertyChanged(nameof(PinToDesktop));
-                    }
                     PushSettings();
-                }
             }
         }
 
-        public bool PinToDesktop
+        public bool AutoHide
         {
-            get => _pinToDesktop;
+            get => _autoHide;
             set
             {
-                if (SetProperty(ref _pinToDesktop, value))
-                {
-                    if (value && _lockOnTop)
-                    {
-                        _lockOnTop = false;
-                        OnPropertyChanged(nameof(LockOnTop));
-                    }
+                if (SetProperty(ref _autoHide, value))
                     PushSettings();
-                }
             }
         }
 
@@ -201,7 +187,7 @@ namespace FlowWatch.ViewModels
             var s = SettingsService.Instance.Settings;
             RefreshIntervalSeconds = Math.Max(1, Math.Min(10, s.RefreshInterval / 1000));
             LockOnTop = s.LockOnTop;
-            PinToDesktop = s.PinToDesktop;
+            AutoHide = s.AutoHide;
             AutoLaunch = s.AutoLaunch;
             AutoCheckUpdate = s.AutoCheckUpdate;
             Language = s.Language ?? "auto";
@@ -225,7 +211,7 @@ namespace FlowWatch.ViewModels
             {
                 s.RefreshInterval = _refreshIntervalSeconds * 1000;
                 s.LockOnTop = _lockOnTop;
-                s.PinToDesktop = _pinToDesktop;
+                s.AutoHide = _autoHide;
                 s.AutoLaunch = _autoLaunch;
                 s.AutoCheckUpdate = _autoCheckUpdate;
                 s.Language = _language;
@@ -250,7 +236,7 @@ namespace FlowWatch.ViewModels
             var s = SettingsService.Instance.Settings;
             RefreshIntervalSeconds = Math.Max(1, Math.Min(10, s.RefreshInterval / 1000));
             LockOnTop = s.LockOnTop;
-            PinToDesktop = s.PinToDesktop;
+            AutoHide = s.AutoHide;
             AutoLaunch = s.AutoLaunch;
             AutoCheckUpdate = s.AutoCheckUpdate;
             Language = s.Language ?? "auto";

@@ -223,7 +223,7 @@ namespace FlowWatch.ViewModels
             FontFamily = new FontFamily(fontName);
             FontSize = Math.Max(11, Math.Min(19, s.FontSize));
             IsVertical = s.Layout == "vertical";
-            IsLocked = s.LockOnTop || s.PinToDesktop;
+            IsLocked = s.LockOnTop;
             DisplayMode = s.DisplayMode ?? "speed";
         }
 

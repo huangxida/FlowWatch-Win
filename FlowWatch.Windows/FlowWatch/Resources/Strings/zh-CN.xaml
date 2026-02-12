@@ -7,7 +7,7 @@
     <sys:String x:Key="Tray.Settings">设置</sys:String>
     <sys:String x:Key="Tray.Statistics">流量统计</sys:String>
     <sys:String x:Key="Tray.AppTraffic">应用流量</sys:String>
-    <sys:String x:Key="Tray.PinToDesktop">固定桌面</sys:String>
+    <sys:String x:Key="Tray.AutoHide">自动隐藏</sys:String>
     <sys:String x:Key="Tray.LockOnTop">置顶</sys:String>
     <sys:String x:Key="Tray.Exit">退出</sys:String>
 
@@ -28,8 +28,8 @@
     <sys:String x:Key="Settings.Window">窗口</sys:String>
     <sys:String x:Key="Settings.LockOnTop">锁定置顶</sys:String>
     <sys:String x:Key="Settings.LockOnTopHint">置顶并穿透点击，解锁后可拖动</sys:String>
-    <sys:String x:Key="Settings.PinToDesktop">固定桌面</sys:String>
-    <sys:String x:Key="Settings.PinToDesktopHint">挂在桌面层级，与置顶互斥</sys:String>
+    <sys:String x:Key="Settings.AutoHide">自动隐藏</sys:String>
+    <sys:String x:Key="Settings.AutoHideHint">鼠标悬停显示，移开后自动隐藏</sys:String>
     <sys:String x:Key="Settings.Layout">布局方向</sys:String>
     <sys:String x:Key="Settings.LayoutHorizontal">水平</sys:String>
     <sys:String x:Key="Settings.LayoutVertical">垂直</sys:String>
