@@ -71,6 +71,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Views\UpdateWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Resources\Styles\OverlayStyles.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -98,6 +102,7 @@
     <Compile Include="Helpers\NativeInterop.cs" />
     <Compile Include="Helpers\NetworkInterfaceHelper.cs" />
     <Compile Include="Models\AppSettings.cs" />
+    <Compile Include="Models\UpdateInfo.cs" />
     <Compile Include="Models\NetworkStats.cs" />
     <Compile Include="Models\DailyTrafficRecord.cs" />
     <Compile Include="Models\AppTrafficHistory.cs" />
@@ -113,6 +118,7 @@
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Services\ProcessTrafficService.cs" />
     <Compile Include="Services\LocalizationService.cs" />
+    <Compile Include="Services\UpdateService.cs" />
     <Compile Include="Services\TrafficHistoryService.cs" />
     <Compile Include="ViewModels\OverlayViewModel.cs" />
     <Compile Include="ViewModels\SettingsViewModel.cs" />
@@ -130,6 +136,9 @@
     </Compile>
     <Compile Include="Views\StatisticsWindow.xaml.cs">
       <DependentUpon>StatisticsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UpdateWindow.xaml.cs">
+      <DependentUpon>UpdateWindow.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -16,5 +16,8 @@ namespace FlowWatch.Models
         public double? AppTrafficWindowWidth { get; set; }
         public double? AppTrafficWindowHeight { get; set; }
         public string Language { get; set; } = "auto";
+        public bool AutoCheckUpdate { get; set; } = true;
+        public string LastUpdateCheck { get; set; }
+        public string SkippedVersion { get; set; }
     }
 }

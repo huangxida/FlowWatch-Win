@@ -44,9 +44,36 @@
     <sys:String x:Key="Settings.ColorMax">Color Max</sys:String>
     <sys:String x:Key="Settings.ColorMaxHint">Threshold for white-to-red speed gradient</sys:String>
     <sys:String x:Key="Settings.TrafficStats">Traffic Statistics</sys:String>
-    <sys:String x:Key="Settings.StartTime">Start Time</sys:String>
-    <sys:String x:Key="Settings.StartTimeHint">Traffic counted from app start, resets on close</sys:String>
-    <sys:String x:Key="Settings.ResetStats">Reset Statistics</sys:String>
+    <sys:String x:Key="Settings.ResetHint">This action cannot be undone</sys:String>
+    <sys:String x:Key="Settings.ResetToday">Reset Today</sys:String>
+    <sys:String x:Key="Settings.ResetTodayConfirm">Are you sure you want to reset today's traffic statistics?</sys:String>
+    <sys:String x:Key="Settings.ResetAll">Reset All</sys:String>
+    <sys:String x:Key="Settings.ResetAllConfirm">Are you sure you want to reset all traffic history? This action cannot be undone.</sys:String>
+
+    <!-- Update -->
+    <sys:String x:Key="Tray.CheckUpdate">Check for Updates</sys:String>
+    <sys:String x:Key="Update.WindowTitle">FlowWatch Update</sys:String>
+    <sys:String x:Key="Update.Header">Update Available</sys:String>
+    <sys:String x:Key="Update.CurrentVersion">Current Version: </sys:String>
+    <sys:String x:Key="Update.LatestVersion">Latest Version: </sys:String>
+    <sys:String x:Key="Update.PublishedAt">Published: </sys:String>
+    <sys:String x:Key="Update.ReleaseNotes">Release Notes</sys:String>
+    <sys:String x:Key="Update.NoNotes">No release notes available.</sys:String>
+    <sys:String x:Key="Update.SkipVersion">Skip This Version</sys:String>
+    <sys:String x:Key="Update.Later">Remind Me Later</sys:String>
+    <sys:String x:Key="Update.UpdateNow">Update Now</sys:String>
+    <sys:String x:Key="Update.Downloading">Downloading...</sys:String>
+    <sys:String x:Key="Update.DownloadFailed">Download failed. Please try again later or download manually from GitHub.</sys:String>
+    <sys:String x:Key="Update.AlreadyLatest">You are using the latest version ({0}).</sys:String>
+    <sys:String x:Key="Update.CheckFailed">Failed to check for updates. Please check your network connection.</sys:String>
+    <sys:String x:Key="Update.Checking">Checking...</sys:String>
+    <sys:String x:Key="Update.BalloonTitle">Update Available</sys:String>
+    <sys:String x:Key="Update.BalloonText">FlowWatch {0} is available. Click to view details.</sys:String>
+    <sys:String x:Key="Settings.AutoCheckUpdate">Auto Check Updates</sys:String>
+    <sys:String x:Key="Settings.AutoCheckUpdateHint">Automatically check for updates every 24 hours</sys:String>
+    <sys:String x:Key="Settings.CurrentVersionLabel">Current Version: </sys:String>
+    <sys:String x:Key="Settings.SkippedVersionLabel">Skipped Version: </sys:String>
+    <sys:String x:Key="Settings.ClearSkip">Clear</sys:String>
 
     <!-- Statistics Window -->
     <sys:String x:Key="Stats.WindowTitle">FlowWatch Statistics</sys:String>

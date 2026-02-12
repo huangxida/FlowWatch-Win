@@ -44,9 +44,36 @@
     <sys:String x:Key="Settings.ColorMax">颜色上限</sys:String>
     <sys:String x:Key="Settings.ColorMaxHint">速率从白到红渐变的阈值</sys:String>
     <sys:String x:Key="Settings.TrafficStats">流量统计</sys:String>
-    <sys:String x:Key="Settings.StartTime">起始时间</sys:String>
-    <sys:String x:Key="Settings.StartTimeHint">流量从应用启动开始计算，关闭后清零</sys:String>
-    <sys:String x:Key="Settings.ResetStats">重置统计</sys:String>
+    <sys:String x:Key="Settings.ResetHint">重置后不可恢复，请谨慎操作</sys:String>
+    <sys:String x:Key="Settings.ResetToday">重置当日</sys:String>
+    <sys:String x:Key="Settings.ResetTodayConfirm">确定要重置今天的流量统计吗？</sys:String>
+    <sys:String x:Key="Settings.ResetAll">重置全部</sys:String>
+    <sys:String x:Key="Settings.ResetAllConfirm">确定要重置所有流量历史记录吗？此操作不可恢复。</sys:String>
+
+    <!-- Update -->
+    <sys:String x:Key="Tray.CheckUpdate">检查更新</sys:String>
+    <sys:String x:Key="Update.WindowTitle">FlowWatch 更新</sys:String>
+    <sys:String x:Key="Update.Header">发现新版本</sys:String>
+    <sys:String x:Key="Update.CurrentVersion">当前版本：</sys:String>
+    <sys:String x:Key="Update.LatestVersion">最新版本：</sys:String>
+    <sys:String x:Key="Update.PublishedAt">发布时间：</sys:String>
+    <sys:String x:Key="Update.ReleaseNotes">更新说明</sys:String>
+    <sys:String x:Key="Update.NoNotes">暂无更新说明。</sys:String>
+    <sys:String x:Key="Update.SkipVersion">跳过此版本</sys:String>
+    <sys:String x:Key="Update.Later">稍后提醒</sys:String>
+    <sys:String x:Key="Update.UpdateNow">立即更新</sys:String>
+    <sys:String x:Key="Update.Downloading">下载中...</sys:String>
+    <sys:String x:Key="Update.DownloadFailed">下载失败，请稍后重试或前往 GitHub 手动下载。</sys:String>
+    <sys:String x:Key="Update.AlreadyLatest">当前已是最新版本 ({0})。</sys:String>
+    <sys:String x:Key="Update.CheckFailed">检查更新失败，请检查网络连接。</sys:String>
+    <sys:String x:Key="Update.Checking">检查中...</sys:String>
+    <sys:String x:Key="Update.BalloonTitle">发现新版本</sys:String>
+    <sys:String x:Key="Update.BalloonText">FlowWatch {0} 已发布，点击查看详情。</sys:String>
+    <sys:String x:Key="Settings.AutoCheckUpdate">自动检查更新</sys:String>
+    <sys:String x:Key="Settings.AutoCheckUpdateHint">每 24 小时自动检查一次新版本</sys:String>
+    <sys:String x:Key="Settings.CurrentVersionLabel">当前版本：</sys:String>
+    <sys:String x:Key="Settings.SkippedVersionLabel">已跳过版本：</sys:String>
+    <sys:String x:Key="Settings.ClearSkip">取消跳过</sys:String>
 
     <!-- Statistics Window -->
     <sys:String x:Key="Stats.WindowTitle">FlowWatch 流量统计</sys:String>

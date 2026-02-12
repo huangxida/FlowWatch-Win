@@ -236,6 +236,30 @@ namespace FlowWatch.Services
             return _history.Records.ToList();
         }
 
+        public void ResetToday()
+        {
+            LogService.Info("重置今日流量");
+            if (_todayRecord != null)
+            {
+                _todayRecord.DownloadBytes = 0;
+                _todayRecord.UploadBytes = 0;
+            }
+            _hasBaseline = false;
+            NetworkMonitorService.Instance.ResetTraffic();
+            Save();
+        }
+
+        public void ResetAll()
+        {
+            LogService.Info("重置全部流量历史");
+            _history = new TrafficHistory();
+            _todayRecord = new DailyTrafficRecord { Date = FormatDate(_currentDate) };
+            _history.Records.Add(_todayRecord);
+            _hasBaseline = false;
+            NetworkMonitorService.Instance.ResetTraffic();
+            Save();
+        }
+
         /// <summary>
         /// 格式化日期为 yyyy-MM-dd 格式
         /// </summary>

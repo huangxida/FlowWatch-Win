@@ -78,6 +78,56 @@
                                   DockPanel.Dock="Right" HorizontalAlignment="Right"
                                   VerticalAlignment="Center"/>
                     </DockPanel>
+
+                    <Border Style="{StaticResource DividerStyle}"/>
+
+                    <!-- Auto check update -->
+                    <DockPanel Margin="0,10,0,10">
+                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <TextBlock Text="{DynamicResource Settings.AutoCheckUpdate}" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.AutoCheckUpdateHint}"/>
+                        </StackPanel>
+                        <CheckBox IsChecked="{Binding AutoCheckUpdate}"
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"/>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource DividerStyle}"/>
+
+                    <!-- Check update -->
+                    <StackPanel Margin="0,10,0,10">
+                        <DockPanel Margin="0,0,0,6">
+                            <TextBlock Style="{StaticResource FieldLabelStyle}"
+                                       DockPanel.Dock="Left" VerticalAlignment="Center">
+                                <Run Text="{DynamicResource Settings.CurrentVersionLabel}"/>
+                                <Run Text="{Binding CurrentVersion, Mode=OneWay}"/>
+                            </TextBlock>
+                        </DockPanel>
+                        <!-- Skipped version hint -->
+                        <DockPanel x:Name="SkippedPanel" Margin="0,0,0,8" Visibility="Collapsed">
+                            <TextBlock x:Name="SkippedText" Style="{StaticResource HintStyle}"
+                                       DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            <Button Content="{DynamicResource Settings.ClearSkip}"
+                                    Command="{Binding ClearSkippedCommand}"
+                                    DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" Padding="8,3"
+                                    FontSize="11.5" Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <TextBlock Text="{TemplateBinding Content}"
+                                                   Foreground="#FF4A90D9" FontSize="11.5"
+                                                   Cursor="Hand"/>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </DockPanel>
+                        <Button x:Name="CheckUpdateButton"
+                                Content="{DynamicResource Tray.CheckUpdate}"
+                                Command="{Binding CheckUpdateCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Stretch"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
@@ -246,19 +296,23 @@
                     BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
                     CornerRadius="8" Padding="16,12">
                 <StackPanel>
-                    <DockPanel>
-                        <TextBlock Text="{DynamicResource Settings.StartTime}" Style="{StaticResource FieldLabelStyle}"
-                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding TrafficStartTimeText}"
-                                   Style="{StaticResource ValueStyle}"
-                                   DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"/>
-                    </DockPanel>
                     <TextBlock Style="{StaticResource HintStyle}"
-                               Text="{DynamicResource Settings.StartTimeHint}" Margin="0,2,0,12"/>
-                    <Button Content="{DynamicResource Settings.ResetStats}" Command="{Binding ResetTrafficCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            HorizontalAlignment="Stretch"/>
+                               Text="{DynamicResource Settings.ResetHint}" Margin="0,0,0,12"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="{DynamicResource Settings.ResetToday}"
+                                Command="{Binding ResetTodayCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Stretch"/>
+                        <Button Grid.Column="2" Content="{DynamicResource Settings.ResetAll}"
+                                Command="{Binding ResetAllCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                HorizontalAlignment="Stretch"/>
+                    </Grid>
                 </StackPanel>
             </Border>
 
