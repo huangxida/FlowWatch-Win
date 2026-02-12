@@ -19,7 +19,7 @@ namespace FlowWatch
         private SettingsWindow _settingsWindow;
         private StatisticsWindow _statisticsWindow;
         private AppTrafficWindow _appTrafficWindow;
-        private MenuItem _pinItem;
+        private MenuItem _autoHideItem;
         private MenuItem _lockItem;
 
         protected override void OnStartup(StartupEventArgs e)
@@ -62,7 +62,7 @@ namespace FlowWatch
                 // Initialize settings
                 LogService.Info("初始化设置服务...");
                 var settings = SettingsService.Instance.Settings;
-                LogService.Info($"设置加载完成 (RefreshInterval={settings.RefreshInterval}, LockOnTop={settings.LockOnTop}, PinToDesktop={settings.PinToDesktop})");
+                LogService.Info($"设置加载完成 (RefreshInterval={settings.RefreshInterval}, LockOnTop={settings.LockOnTop}, AutoHide={settings.AutoHide})");
 
                 // Apply language
                 LocalizationService.Instance.ApplyLanguage(settings.Language ?? "auto");
@@ -180,18 +180,17 @@ namespace FlowWatch
             var appTrafficItem = new MenuItem { Header = loc.Get("Tray.AppTraffic") };
             appTrafficItem.Click += (s, ev) => ShowAppTraffic();
 
-            _pinItem = new MenuItem
+            _autoHideItem = new MenuItem
             {
-                Header = loc.Get("Tray.PinToDesktop"),
+                Header = loc.Get("Tray.AutoHide"),
                 IsCheckable = true,
-                IsChecked = SettingsService.Instance.Settings.PinToDesktop
+                IsChecked = SettingsService.Instance.Settings.AutoHide
             };
-            _pinItem.Click += (s, ev) =>
+            _autoHideItem.Click += (s, ev) =>
             {
                 SettingsService.Instance.Update(st =>
                 {
-                    st.PinToDesktop = _pinItem.IsChecked;
-                    if (_pinItem.IsChecked) st.LockOnTop = false;
+                    st.AutoHide = _autoHideItem.IsChecked;
                 });
             };
 
@@ -206,7 +205,6 @@ namespace FlowWatch
                 SettingsService.Instance.Update(st =>
                 {
                     st.LockOnTop = _lockItem.IsChecked;
-                    if (_lockItem.IsChecked) st.PinToDesktop = false;
                 });
             };
 
@@ -218,7 +216,7 @@ namespace FlowWatch
             contextMenu.Items.Add(settingsItem);
             contextMenu.Items.Add(statisticsItem);
             contextMenu.Items.Add(appTrafficItem);
-            contextMenu.Items.Add(_pinItem);
+            contextMenu.Items.Add(_autoHideItem);
             contextMenu.Items.Add(_lockItem);
             contextMenu.Items.Add(separator);
             contextMenu.Items.Add(exitItem);
@@ -243,7 +241,7 @@ namespace FlowWatch
             Dispatcher.Invoke(() =>
             {
                 var settings = SettingsService.Instance.Settings;
-                if (_pinItem != null) _pinItem.IsChecked = settings.PinToDesktop;
+                if (_autoHideItem != null) _autoHideItem.IsChecked = settings.AutoHide;
                 if (_lockItem != null) _lockItem.IsChecked = settings.LockOnTop;
             });
         }

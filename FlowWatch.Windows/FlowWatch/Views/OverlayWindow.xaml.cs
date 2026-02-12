@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Threading;
 using FlowWatch.Helpers;
 using FlowWatch.Services;
 using FlowWatch.ViewModels;
@@ -12,6 +13,8 @@ namespace FlowWatch.Views
     {
         private OverlayViewModel _vm;
         private bool _suppressSave;
+        private DispatcherTimer _autoHideTimer;
+        private bool _isAutoHideVisible = true;
 
         public OverlayWindow()
         {
@@ -39,7 +42,7 @@ namespace FlowWatch.Views
             NativeInterop.SetToolWindow(hwnd);
 
             ApplyLockState();
-            ApplyPinState();
+            ApplyAutoHideState();
 
             SettingsService.Instance.SettingsChanged += OnSettingsChanged;
         }
@@ -68,7 +71,7 @@ namespace FlowWatch.Views
             Dispatcher.Invoke(() =>
             {
                 ApplyLockState();
-                ApplyPinState();
+                ApplyAutoHideState();
             });
         }
 
@@ -78,31 +81,65 @@ namespace FlowWatch.Views
             var hwnd = new WindowInteropHelper(this).Handle;
             if (hwnd == IntPtr.Zero) return;
 
-            bool locked = settings.LockOnTop || settings.PinToDesktop;
-            NativeInterop.SetClickThrough(hwnd, locked);
-            Topmost = settings.LockOnTop && !settings.PinToDesktop;
+            NativeInterop.SetClickThrough(hwnd, settings.LockOnTop);
+            Topmost = settings.LockOnTop;
 
-            Cursor = locked ? Cursors.Arrow : Cursors.SizeAll;
+            Cursor = settings.LockOnTop ? Cursors.Arrow : Cursors.SizeAll;
         }
 
-        private void ApplyPinState()
+        private void ApplyAutoHideState()
         {
             var settings = SettingsService.Instance.Settings;
-            var hwnd = new WindowInteropHelper(this).Handle;
-            if (hwnd == IntPtr.Zero) return;
 
-            if (settings.PinToDesktop)
+            if (settings.AutoHide)
             {
-                DesktopPinService.PinToDesktop(hwnd);
+                if (_autoHideTimer == null)
+                {
+                    _autoHideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+                    _autoHideTimer.Tick += OnAutoHideTimerTick;
+                }
+                _autoHideTimer.Start();
+                // Check current state immediately
+                CheckMousePosition();
             }
-            else if (DesktopPinService.IsPinned)
+            else
             {
-                DesktopPinService.UnpinFromDesktop(hwnd);
+                _autoHideTimer?.Stop();
+                Opacity = 1.0;
+                _isAutoHideVisible = true;
+            }
+        }
+
+        private void OnAutoHideTimerTick(object sender, EventArgs e)
+        {
+            CheckMousePosition();
+        }
+
+        private void CheckMousePosition()
+        {
+            NativeInterop.GetCursorPos(out var pt);
+            var screenPoint = new Point(pt.X, pt.Y);
+            var wpfPoint = PointFromScreen(screenPoint);
+
+            // Add a small margin (8px) around the window for easier targeting
+            bool isMouseOver = wpfPoint.X >= -8 && wpfPoint.Y >= -8 &&
+                               wpfPoint.X <= ActualWidth + 8 && wpfPoint.Y <= ActualHeight + 8;
+
+            if (isMouseOver && !_isAutoHideVisible)
+            {
+                _isAutoHideVisible = true;
+                Opacity = 1.0;
+            }
+            else if (!isMouseOver && _isAutoHideVisible)
+            {
+                _isAutoHideVisible = false;
+                Opacity = 0.1;
             }
         }
 
         public void Cleanup()
         {
+            _autoHideTimer?.Stop();
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
             _vm?.Cleanup();
         }

@@ -7,7 +7,7 @@
     <sys:String x:Key="Tray.Settings">Settings</sys:String>
     <sys:String x:Key="Tray.Statistics">Statistics</sys:String>
     <sys:String x:Key="Tray.AppTraffic">App Traffic</sys:String>
-    <sys:String x:Key="Tray.PinToDesktop">Pin to Desktop</sys:String>
+    <sys:String x:Key="Tray.AutoHide">Auto Hide</sys:String>
     <sys:String x:Key="Tray.LockOnTop">Lock on Top</sys:String>
     <sys:String x:Key="Tray.Exit">Exit</sys:String>
 
@@ -28,8 +28,8 @@
     <sys:String x:Key="Settings.Window">Window</sys:String>
     <sys:String x:Key="Settings.LockOnTop">Lock on Top</sys:String>
     <sys:String x:Key="Settings.LockOnTopHint">Stay on top with click-through, unlock to drag</sys:String>
-    <sys:String x:Key="Settings.PinToDesktop">Pin to Desktop</sys:String>
-    <sys:String x:Key="Settings.PinToDesktopHint">Pin to desktop layer, exclusive with lock on top</sys:String>
+    <sys:String x:Key="Settings.AutoHide">Auto Hide</sys:String>
+    <sys:String x:Key="Settings.AutoHideHint">Show on mouse hover, hide when mouse leaves</sys:String>
     <sys:String x:Key="Settings.Layout">Layout</sys:String>
     <sys:String x:Key="Settings.LayoutHorizontal">Horizontal</sys:String>
     <sys:String x:Key="Settings.LayoutVertical">Vertical</sys:String>

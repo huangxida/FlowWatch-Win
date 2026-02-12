@@ -4,7 +4,7 @@ namespace FlowWatch.Models
     {
         public int RefreshInterval { get; set; } = 1000;
         public bool LockOnTop { get; set; } = true;
-        public bool PinToDesktop { get; set; } = false;
+        public bool AutoHide { get; set; } = false;
         public string FontFamily { get; set; } = "Segoe UI, Microsoft YaHei, sans-serif";
         public int FontSize { get; set; } = 18;
         public string Layout { get; set; } = "horizontal";
