@@ -1,0 +1,81 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Tray Menu -->
+    <sys:String x:Key="Tray.Tooltip">FlowWatch 网速监控</sys:String>
+    <sys:String x:Key="Tray.Settings">设置</sys:String>
+    <sys:String x:Key="Tray.Statistics">流量统计</sys:String>
+    <sys:String x:Key="Tray.AppTraffic">应用流量</sys:String>
+    <sys:String x:Key="Tray.PinToDesktop">固定桌面</sys:String>
+    <sys:String x:Key="Tray.LockOnTop">置顶</sys:String>
+    <sys:String x:Key="Tray.Exit">退出</sys:String>
+
+    <!-- Common Messages -->
+    <sys:String x:Key="Common.AlreadyRunning">FlowWatch 已在运行中。</sys:String>
+    <sys:String x:Key="Common.StartupFailed">启动失败: {0}</sys:String>
+
+    <!-- Settings Window -->
+    <sys:String x:Key="Settings.WindowTitle">FlowWatch 设置</sys:String>
+    <sys:String x:Key="Settings.Header">设置</sys:String>
+    <sys:String x:Key="Settings.General">常规</sys:String>
+    <sys:String x:Key="Settings.Language">语言</sys:String>
+    <sys:String x:Key="Settings.LanguageAuto">跟随系统</sys:String>
+    <sys:String x:Key="Settings.RefreshRate">刷新频率</sys:String>
+    <sys:String x:Key="Settings.RefreshRateHint">数据更新间隔，越小越实时</sys:String>
+    <sys:String x:Key="Settings.AutoLaunch">开机自启</sys:String>
+    <sys:String x:Key="Settings.AutoLaunchHint">登录系统时自动运行</sys:String>
+    <sys:String x:Key="Settings.Window">窗口</sys:String>
+    <sys:String x:Key="Settings.LockOnTop">锁定置顶</sys:String>
+    <sys:String x:Key="Settings.LockOnTopHint">置顶并穿透点击，解锁后可拖动</sys:String>
+    <sys:String x:Key="Settings.PinToDesktop">固定桌面</sys:String>
+    <sys:String x:Key="Settings.PinToDesktopHint">挂在桌面层级，与置顶互斥</sys:String>
+    <sys:String x:Key="Settings.Layout">布局方向</sys:String>
+    <sys:String x:Key="Settings.LayoutHorizontal">水平</sys:String>
+    <sys:String x:Key="Settings.LayoutVertical">垂直</sys:String>
+    <sys:String x:Key="Settings.DisplayMode">显示模式</sys:String>
+    <sys:String x:Key="Settings.DisplaySpeed">速率</sys:String>
+    <sys:String x:Key="Settings.DisplayUsage">流量</sys:String>
+    <sys:String x:Key="Settings.DisplayBoth">速率+流量</sys:String>
+    <sys:String x:Key="Settings.Appearance">外观</sys:String>
+    <sys:String x:Key="Settings.Font">字体</sys:String>
+    <sys:String x:Key="Settings.FontPreset">预设字体...</sys:String>
+    <sys:String x:Key="Settings.FontSize">字号</sys:String>
+    <sys:String x:Key="Settings.ColorMax">颜色上限</sys:String>
+    <sys:String x:Key="Settings.ColorMaxHint">速率从白到红渐变的阈值</sys:String>
+    <sys:String x:Key="Settings.TrafficStats">流量统计</sys:String>
+    <sys:String x:Key="Settings.StartTime">起始时间</sys:String>
+    <sys:String x:Key="Settings.StartTimeHint">流量从应用启动开始计算，关闭后清零</sys:String>
+    <sys:String x:Key="Settings.ResetStats">重置统计</sys:String>
+
+    <!-- Statistics Window -->
+    <sys:String x:Key="Stats.WindowTitle">FlowWatch 流量统计</sys:String>
+    <sys:String x:Key="Stats.Header">流量统计</sys:String>
+    <sys:String x:Key="Stats.Day">日</sys:String>
+    <sys:String x:Key="Stats.Week">周</sys:String>
+    <sys:String x:Key="Stats.Month">月</sys:String>
+    <sys:String x:Key="Stats.Summary">汇总</sys:String>
+    <sys:String x:Key="Stats.TotalDownload" xml:space="preserve"> 总下载</sys:String>
+    <sys:String x:Key="Stats.TotalUpload" xml:space="preserve"> 总上传</sys:String>
+    <sys:String x:Key="Stats.DailyDetail">每日明细</sys:String>
+    <sys:String x:Key="Stats.PeriodToday">今天</sys:String>
+    <sys:String x:Key="Stats.PeriodWeek">本周 {0} - {1}</sys:String>
+    <sys:String x:Key="Stats.PeriodMonth">{0}年{1}月</sys:String>
+
+    <!-- App Traffic Window -->
+    <sys:String x:Key="AppTraffic.WindowTitle">FlowWatch 应用流量</sys:String>
+    <sys:String x:Key="AppTraffic.Header">应用流量</sys:String>
+    <sys:String x:Key="AppTraffic.Realtime">实时</sys:String>
+    <sys:String x:Key="AppTraffic.Day">日</sys:String>
+    <sys:String x:Key="AppTraffic.Week">周</sys:String>
+    <sys:String x:Key="AppTraffic.Month">月</sys:String>
+    <sys:String x:Key="AppTraffic.Summary">汇总</sys:String>
+    <sys:String x:Key="AppTraffic.TotalDownload" xml:space="preserve"> 总下载</sys:String>
+    <sys:String x:Key="AppTraffic.TotalUpload" xml:space="preserve"> 总上传</sys:String>
+    <sys:String x:Key="AppTraffic.AppDetail">应用明细</sys:String>
+    <sys:String x:Key="AppTraffic.PeriodRealtime">实时速度</sys:String>
+    <sys:String x:Key="AppTraffic.PeriodToday">今天</sys:String>
+    <sys:String x:Key="AppTraffic.PeriodWeek">本周 {0} - {1}</sys:String>
+    <sys:String x:Key="AppTraffic.PeriodMonth">{0}年{1}月</sys:String>
+
+</ResourceDictionary>

@@ -49,7 +49,12 @@ namespace FlowWatch
                 if (!createdNew)
                 {
                     LogService.Warn("检测到已有实例运行，退出");
-                    MessageBox.Show("FlowWatch 已在运行中。", "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Apply language before showing MessageBox
+                    var tempSettings = SettingsService.Instance.Settings;
+                    LocalizationService.Instance.ApplyLanguage(tempSettings.Language ?? "auto");
+                    MessageBox.Show(
+                        LocalizationService.Instance.Get("Common.AlreadyRunning"),
+                        "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Information);
                     Shutdown();
                     return;
                 }
@@ -58,6 +63,10 @@ namespace FlowWatch
                 LogService.Info("初始化设置服务...");
                 var settings = SettingsService.Instance.Settings;
                 LogService.Info($"设置加载完成 (RefreshInterval={settings.RefreshInterval}, LockOnTop={settings.LockOnTop}, PinToDesktop={settings.PinToDesktop})");
+
+                // Apply language
+                LocalizationService.Instance.ApplyLanguage(settings.Language ?? "auto");
+                LocalizationService.Instance.LanguageChanged += OnLanguageChanged;
 
                 // Apply auto-launch setting
                 AutoLaunchService.SetAutoLaunch(settings.AutoLaunch);
@@ -109,15 +118,19 @@ namespace FlowWatch
             catch (Exception ex)
             {
                 LogService.Error("启动过程发生致命错误", ex);
-                MessageBox.Show($"启动失败: {ex.Message}", "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(
+                    LocalizationService.Instance.Format("Common.StartupFailed", ex.Message),
+                    "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
             }
         }
 
         private void CreateTrayIcon()
         {
+            var loc = LocalizationService.Instance;
+
             _trayIcon = new TaskbarIcon();
-            _trayIcon.ToolTipText = "FlowWatch 网速监控";
+            _trayIcon.ToolTipText = loc.Get("Tray.Tooltip");
 
             // Load icon from embedded resource
             try
@@ -144,21 +157,32 @@ namespace FlowWatch
                 catch { }
             }
 
-            // Context menu
+            BuildTrayContextMenu();
+
+            _trayIcon.TrayMouseDoubleClick += (s, ev) => ShowSettings();
+
+            // Listen for settings changes to update menu state
+            SettingsService.Instance.SettingsChanged += OnSettingsChangedForTray;
+        }
+
+        private void BuildTrayContextMenu()
+        {
+            var loc = LocalizationService.Instance;
+
             var contextMenu = new ContextMenu();
 
-            var settingsItem = new MenuItem { Header = "设置" };
+            var settingsItem = new MenuItem { Header = loc.Get("Tray.Settings") };
             settingsItem.Click += (s, ev) => ShowSettings();
 
-            var statisticsItem = new MenuItem { Header = "流量统计" };
+            var statisticsItem = new MenuItem { Header = loc.Get("Tray.Statistics") };
             statisticsItem.Click += (s, ev) => ShowStatistics();
 
-            var appTrafficItem = new MenuItem { Header = "应用流量" };
+            var appTrafficItem = new MenuItem { Header = loc.Get("Tray.AppTraffic") };
             appTrafficItem.Click += (s, ev) => ShowAppTraffic();
 
             _pinItem = new MenuItem
             {
-                Header = "固定桌面",
+                Header = loc.Get("Tray.PinToDesktop"),
                 IsCheckable = true,
                 IsChecked = SettingsService.Instance.Settings.PinToDesktop
             };
@@ -173,7 +197,7 @@ namespace FlowWatch
 
             _lockItem = new MenuItem
             {
-                Header = "置顶",
+                Header = loc.Get("Tray.LockOnTop"),
                 IsCheckable = true,
                 IsChecked = SettingsService.Instance.Settings.LockOnTop
             };
@@ -188,7 +212,7 @@ namespace FlowWatch
 
             var separator = new Separator();
 
-            var exitItem = new MenuItem { Header = "退出" };
+            var exitItem = new MenuItem { Header = loc.Get("Tray.Exit") };
             exitItem.Click += (s, ev) => ExitApplication();
 
             contextMenu.Items.Add(settingsItem);
@@ -200,10 +224,18 @@ namespace FlowWatch
             contextMenu.Items.Add(exitItem);
 
             _trayIcon.ContextMenu = contextMenu;
-            _trayIcon.TrayMouseDoubleClick += (s, ev) => ShowSettings();
+        }
 
-            // Listen for settings changes to update menu state
-            SettingsService.Instance.SettingsChanged += OnSettingsChangedForTray;
+        private void OnLanguageChanged()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (_trayIcon != null)
+                {
+                    _trayIcon.ToolTipText = LocalizationService.Instance.Get("Tray.Tooltip");
+                    BuildTrayContextMenu();
+                }
+            });
         }
 
         private void OnSettingsChangedForTray()
@@ -240,6 +272,7 @@ namespace FlowWatch
         private void ExitApplication()
         {
             LogService.Info("========== FlowWatch 退出 ==========");
+            LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
             ProcessTrafficService.Instance.Stop();
             TrafficHistoryService.Instance.Stop();
             NetworkMonitorService.Instance.Stop();

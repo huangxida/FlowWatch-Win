@@ -46,6 +46,7 @@ namespace FlowWatch.ViewModels
             DayCommand = new RelayCommand(() => SelectedRange = "day");
             WeekCommand = new RelayCommand(() => SelectedRange = "week");
             MonthCommand = new RelayCommand(() => SelectedRange = "month");
+            LocalizationService.Instance.LanguageChanged += OnLanguageChanged;
             Refresh();
         }
 
@@ -100,6 +101,11 @@ namespace FlowWatch.ViewModels
         public ICommand WeekCommand { get; }
         public ICommand MonthCommand { get; }
 
+        private void OnLanguageChanged()
+        {
+            Refresh();
+        }
+
         public void Refresh()
         {
             if (_selectedRange == "realtime")
@@ -110,6 +116,7 @@ namespace FlowWatch.ViewModels
 
             var allRecords = ProcessTrafficService.Instance.GetRecords();
             var today = DateTime.Now.Date;
+            var loc = LocalizationService.Instance;
 
             List<DailyAppTrafficRecord> filtered;
 
@@ -118,18 +125,18 @@ namespace FlowWatch.ViewModels
                 case "week":
                     int diff = (7 + (int)today.DayOfWeek - (int)DayOfWeek.Monday) % 7;
                     var weekStart = today.AddDays(-diff);
-                    PeriodLabel = $"本周 {weekStart:MM/dd} - {weekStart.AddDays(6):MM/dd}";
+                    PeriodLabel = loc.Format("AppTraffic.PeriodWeek", weekStart.ToString("MM/dd"), weekStart.AddDays(6).ToString("MM/dd"));
                     filtered = FilterByRange(allRecords, weekStart, today);
                     break;
 
                 case "month":
                     var monthStart = new DateTime(today.Year, today.Month, 1);
-                    PeriodLabel = $"{today.Year}年{today.Month}月";
+                    PeriodLabel = loc.Format("AppTraffic.PeriodMonth", today.Year, today.Month);
                     filtered = FilterByRange(allRecords, monthStart, today);
                     break;
 
                 default:
-                    PeriodLabel = "今天";
+                    PeriodLabel = loc.Get("AppTraffic.PeriodToday");
                     filtered = FilterByRange(allRecords, today, today);
                     break;
             }
@@ -194,7 +201,7 @@ namespace FlowWatch.ViewModels
 
         private void RefreshRealtime()
         {
-            PeriodLabel = "实时速度";
+            PeriodLabel = LocalizationService.Instance.Get("AppTraffic.PeriodRealtime");
 
             var speeds = ProcessTrafficService.Instance.GetRealtimeSpeeds();
 

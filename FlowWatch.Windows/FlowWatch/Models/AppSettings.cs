@@ -15,5 +15,6 @@ namespace FlowWatch.Models
         public bool AutoLaunch { get; set; } = true;
         public double? AppTrafficWindowWidth { get; set; }
         public double? AppTrafficWindowHeight { get; set; }
+        public string Language { get; set; } = "auto";
     }
 }

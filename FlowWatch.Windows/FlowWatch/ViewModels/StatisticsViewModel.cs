@@ -34,6 +34,7 @@ namespace FlowWatch.ViewModels
             DayCommand = new RelayCommand(() => SelectedRange = "day");
             WeekCommand = new RelayCommand(() => SelectedRange = "week");
             MonthCommand = new RelayCommand(() => SelectedRange = "month");
+            LocalizationService.Instance.LanguageChanged += OnLanguageChanged;
             Refresh();
         }
 
@@ -84,12 +85,18 @@ namespace FlowWatch.ViewModels
         public ICommand WeekCommand { get; }
         public ICommand MonthCommand { get; }
 
+        private void OnLanguageChanged()
+        {
+            Refresh();
+        }
+
         public void Refresh()
         {
             LogService.Info($"StatisticsViewModel.Refresh() 范围={_selectedRange}");
             var allRecords = TrafficHistoryService.Instance.GetRecords();
             LogService.Info($"获取到 {allRecords.Count} 条历史记录");
             var today = DateTime.Now.Date;
+            var loc = LocalizationService.Instance;
 
             List<DailyTrafficRecord> filtered;
 
@@ -99,18 +106,18 @@ namespace FlowWatch.ViewModels
                     // 本周一到今天
                     int diff = (7 + (int)today.DayOfWeek - (int)DayOfWeek.Monday) % 7;
                     var weekStart = today.AddDays(-diff);
-                    PeriodLabel = $"本周 {weekStart:MM/dd} - {weekStart.AddDays(6):MM/dd}";
+                    PeriodLabel = loc.Format("Stats.PeriodWeek", weekStart.ToString("MM/dd"), weekStart.AddDays(6).ToString("MM/dd"));
                     filtered = FilterByRange(allRecords, weekStart, today);
                     break;
 
                 case "month":
                     var monthStart = new DateTime(today.Year, today.Month, 1);
-                    PeriodLabel = $"{today.Year}年{today.Month}月";
+                    PeriodLabel = loc.Format("Stats.PeriodMonth", today.Year, today.Month);
                     filtered = FilterByRange(allRecords, monthStart, today);
                     break;
 
                 default: // day
-                    PeriodLabel = "今天";
+                    PeriodLabel = loc.Get("Stats.PeriodToday");
                     filtered = FilterByRange(allRecords, today, today);
                     break;
             }

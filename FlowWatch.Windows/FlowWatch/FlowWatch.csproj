@@ -79,6 +79,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Resources\Strings\en-US.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Resources\Strings\zh-CN.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
@@ -104,6 +112,7 @@
     <Compile Include="Services\NetworkMonitorService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Services\ProcessTrafficService.cs" />
+    <Compile Include="Services\LocalizationService.cs" />
     <Compile Include="Services\TrafficHistoryService.cs" />
     <Compile Include="ViewModels\OverlayViewModel.cs" />
     <Compile Include="ViewModels\SettingsViewModel.cs" />
