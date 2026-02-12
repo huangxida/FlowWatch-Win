@@ -1,0 +1,148 @@
+<Window x:Class="FlowWatch.Views.StatisticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FlowWatch.ViewModels"
+        Title="FlowWatch 流量统计"
+        Width="480" Height="540"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource SettingsWindowStyle}"
+        ShowInTaskbar="True">
+    <Window.DataContext>
+        <vm:StatisticsViewModel/>
+    </Window.DataContext>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28,32,28">
+
+            <!-- Header -->
+            <TextBlock Text="流量统计" FontSize="20" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,20"/>
+
+            <!-- Range Tabs -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <RadioButton Content="日" GroupName="Range"
+                             IsChecked="{Binding IsDaySelected, Mode=OneWay}"
+                             Command="{Binding DayCommand}"
+                             Style="{StaticResource RangeTabStyle}" Margin="0,0,8,0"/>
+                <RadioButton Content="周" GroupName="Range"
+                             IsChecked="{Binding IsWeekSelected, Mode=OneWay}"
+                             Command="{Binding WeekCommand}"
+                             Style="{StaticResource RangeTabStyle}" Margin="0,0,8,0"/>
+                <RadioButton Content="月" GroupName="Range"
+                             IsChecked="{Binding IsMonthSelected, Mode=OneWay}"
+                             Command="{Binding MonthCommand}"
+                             Style="{StaticResource RangeTabStyle}"/>
+            </StackPanel>
+
+            <!-- Period Label -->
+            <TextBlock Text="{Binding PeriodLabel}" FontSize="13"
+                       Foreground="{StaticResource HintBrush}" Margin="0,0,0,16"/>
+
+            <!-- Summary Card -->
+            <TextBlock Text="汇总" FontSize="11.5" FontWeight="Medium"
+                       Foreground="{StaticResource HintBrush}" Margin="0,0,0,10"/>
+
+            <Border Background="{StaticResource CardBackgroundBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="16,12" Margin="0,0,0,20">
+                <StackPanel>
+                    <DockPanel Margin="0,2,0,2">
+                        <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <Run Text="↓" Foreground="#FF4CAF50" FontWeight="Bold"/>
+                            <Run Text=" 总下载" Foreground="{StaticResource TextBrush}"/>
+                        </TextBlock>
+                        <TextBlock Text="{Binding TotalDownloadFormatted}"
+                                   Style="{StaticResource ValueStyle}"
+                                   DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <Border Style="{StaticResource DividerStyle}"/>
+                    <DockPanel Margin="0,2,0,2">
+                        <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center">
+                            <Run Text="↑" Foreground="#FFFF9800" FontWeight="Bold"/>
+                            <Run Text=" 总上传" Foreground="{StaticResource TextBrush}"/>
+                        </TextBlock>
+                        <TextBlock Text="{Binding TotalUploadFormatted}"
+                                   Style="{StaticResource ValueStyle}"
+                                   DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Daily Detail Card -->
+            <TextBlock Text="每日明细" FontSize="11.5" FontWeight="Medium"
+                       Foreground="{StaticResource HintBrush}" Margin="0,0,0,10"/>
+
+            <Border Background="{StaticResource CardBackgroundBrush}"
+                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="16,8">
+                <ItemsControl ItemsSource="{Binding DailyRecords}" MaxHeight="260">
+                    <ItemsControl.Template>
+                        <ControlTemplate TargetType="ItemsControl">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          MaxHeight="260">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </ItemsControl.Template>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,6,0,6">
+                                <!-- Date -->
+                                <TextBlock Text="{Binding Date}" FontSize="12" FontWeight="Medium"
+                                           Foreground="{StaticResource TextBrush}" Margin="0,0,0,4"/>
+                                <!-- Download bar -->
+                                <DockPanel Margin="0,1,0,1">
+                                    <TextBlock Text="↓" Foreground="#FF4CAF50" FontWeight="Bold"
+                                               Width="16" VerticalAlignment="Center" FontSize="11"/>
+                                    <TextBlock Text="{Binding DownloadFormatted}"
+                                               DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                               Foreground="{StaticResource AccentBrush}"
+                                               FontSize="11.5" FontFamily="Consolas, Segoe UI"
+                                               VerticalAlignment="Center" MinWidth="70" TextAlignment="Right"/>
+                                    <Grid Margin="4,0,8,0" Height="10" VerticalAlignment="Center">
+                                        <Border Background="#FFEEEEEE" CornerRadius="3"/>
+                                        <Border Background="#FF4CAF50" CornerRadius="3"
+                                                HorizontalAlignment="Left">
+                                            <Border.Width>
+                                                <MultiBinding Converter="{StaticResource RatioToWidthConverter}">
+                                                    <Binding Path="DownloadRatio"/>
+                                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}"/>
+                                                </MultiBinding>
+                                            </Border.Width>
+                                        </Border>
+                                    </Grid>
+                                </DockPanel>
+                                <!-- Upload bar -->
+                                <DockPanel Margin="0,1,0,1">
+                                    <TextBlock Text="↑" Foreground="#FFFF9800" FontWeight="Bold"
+                                               Width="16" VerticalAlignment="Center" FontSize="11"/>
+                                    <TextBlock Text="{Binding UploadFormatted}"
+                                               DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                               Foreground="{StaticResource AccentBrush}"
+                                               FontSize="11.5" FontFamily="Consolas, Segoe UI"
+                                               VerticalAlignment="Center" MinWidth="70" TextAlignment="Right"/>
+                                    <Grid Margin="4,0,8,0" Height="10" VerticalAlignment="Center">
+                                        <Border Background="#FFEEEEEE" CornerRadius="3"/>
+                                        <Border Background="#FFFF9800" CornerRadius="3"
+                                                HorizontalAlignment="Left">
+                                            <Border.Width>
+                                                <MultiBinding Converter="{StaticResource RatioToWidthConverter}">
+                                                    <Binding Path="UploadRatio"/>
+                                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}"/>
+                                                </MultiBinding>
+                                            </Border.Width>
+                                        </Border>
+                                    </Grid>
+                                </DockPanel>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Window>

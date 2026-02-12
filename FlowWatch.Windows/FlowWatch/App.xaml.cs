@@ -17,6 +17,7 @@ namespace FlowWatch
         private TaskbarIcon _trayIcon;
         private OverlayWindow _overlayWindow;
         private SettingsWindow _settingsWindow;
+        private StatisticsWindow _statisticsWindow;
         private MenuItem _pinItem;
         private MenuItem _lockItem;
 
@@ -24,34 +25,82 @@ namespace FlowWatch
         {
             base.OnStartup(e);
 
-            // Single instance check
-            bool createdNew;
-            _mutex = new Mutex(true, "FlowWatch_SingleInstance", out createdNew);
-            if (!createdNew)
+            // Global unhandled exception handlers
+            DispatcherUnhandledException += (s, args) =>
             {
-                MessageBox.Show("FlowWatch 已在运行中。", "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Information);
-                Shutdown();
-                return;
+                LogService.Error("DispatcherUnhandledException", args.Exception);
+                args.Handled = true;
+            };
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+            {
+                if (args.ExceptionObject is Exception ex)
+                    LogService.Error("AppDomain.UnhandledException", ex);
+            };
+
+            LogService.Info("========== FlowWatch 启动 ==========");
+            LogService.CleanOldLogs();
+
+            try
+            {
+                // Single instance check
+                bool createdNew;
+                _mutex = new Mutex(true, "FlowWatch_SingleInstance", out createdNew);
+                if (!createdNew)
+                {
+                    LogService.Warn("检测到已有实例运行，退出");
+                    MessageBox.Show("FlowWatch 已在运行中。", "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Shutdown();
+                    return;
+                }
+
+                // Initialize settings
+                LogService.Info("初始化设置服务...");
+                var settings = SettingsService.Instance.Settings;
+                LogService.Info($"设置加载完成 (RefreshInterval={settings.RefreshInterval}, LockOnTop={settings.LockOnTop}, PinToDesktop={settings.PinToDesktop})");
+
+                // Apply auto-launch setting
+                AutoLaunchService.SetAutoLaunch(settings.AutoLaunch);
+                LogService.Info($"自启动设置: {settings.AutoLaunch}");
+
+                // Create tray icon
+                LogService.Info("创建托盘图标...");
+                CreateTrayIcon();
+                LogService.Info("托盘图标创建完成");
+
+                // Create overlay window
+                LogService.Info("创建悬浮窗...");
+                _overlayWindow = new OverlayWindow();
+                _overlayWindow.Show();
+                LogService.Info("悬浮窗已显示");
+
+                // Create settings window (hidden)
+                LogService.Info("创建设置窗口...");
+                _settingsWindow = new SettingsWindow();
+                LogService.Info("设置窗口创建完成");
+
+                // Start network monitoring
+                LogService.Info("启动网络监控服务...");
+                NetworkMonitorService.Instance.Start(settings.RefreshInterval);
+                LogService.Info("网络监控服务已启动");
+
+                // Start traffic history recording
+                LogService.Info("启动流量历史服务...");
+                TrafficHistoryService.Instance.Start();
+                LogService.Info("流量历史服务已启动");
+
+                // Create statistics window (hidden, after TrafficHistoryService started)
+                LogService.Info("创建统计窗口...");
+                _statisticsWindow = new StatisticsWindow();
+                LogService.Info("统计窗口创建完成");
+
+                LogService.Info("========== 启动流程完成 ==========");
             }
-
-            // Initialize settings
-            var settings = SettingsService.Instance.Settings;
-
-            // Apply auto-launch setting
-            AutoLaunchService.SetAutoLaunch(settings.AutoLaunch);
-
-            // Create tray icon
-            CreateTrayIcon();
-
-            // Create overlay window
-            _overlayWindow = new OverlayWindow();
-            _overlayWindow.Show();
-
-            // Create settings window (hidden)
-            _settingsWindow = new SettingsWindow();
-
-            // Start network monitoring
-            NetworkMonitorService.Instance.Start(settings.RefreshInterval);
+            catch (Exception ex)
+            {
+                LogService.Error("启动过程发生致命错误", ex);
+                MessageBox.Show($"启动失败: {ex.Message}", "FlowWatch", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
+            }
         }
 
         private void CreateTrayIcon()
@@ -90,6 +139,9 @@ namespace FlowWatch
             var settingsItem = new MenuItem { Header = "设置" };
             settingsItem.Click += (s, ev) => ShowSettings();
 
+            var statisticsItem = new MenuItem { Header = "流量统计" };
+            statisticsItem.Click += (s, ev) => ShowStatistics();
+
             _pinItem = new MenuItem
             {
                 Header = "固定桌面",
@@ -126,6 +178,7 @@ namespace FlowWatch
             exitItem.Click += (s, ev) => ExitApplication();
 
             contextMenu.Items.Add(settingsItem);
+            contextMenu.Items.Add(statisticsItem);
             contextMenu.Items.Add(_pinItem);
             contextMenu.Items.Add(_lockItem);
             contextMenu.Items.Add(separator);
@@ -155,12 +208,22 @@ namespace FlowWatch
             _settingsWindow.Show();
         }
 
+        private void ShowStatistics()
+        {
+            if (_statisticsWindow == null)
+                _statisticsWindow = new StatisticsWindow();
+            _statisticsWindow.Show();
+        }
+
         private void ExitApplication()
         {
+            LogService.Info("========== FlowWatch 退出 ==========");
+            TrafficHistoryService.Instance.Stop();
             NetworkMonitorService.Instance.Stop();
             SettingsService.Instance.SettingsChanged -= OnSettingsChangedForTray;
             _overlayWindow?.Cleanup();
             _settingsWindow?.ForceClose();
+            _statisticsWindow?.ForceClose();
 
             _trayIcon?.Dispose();
             _trayIcon = null;
@@ -169,6 +232,7 @@ namespace FlowWatch
             _mutex?.Dispose();
             _mutex = null;
 
+            LogService.Info("清理完成，正在关闭");
             Shutdown();
         }
 

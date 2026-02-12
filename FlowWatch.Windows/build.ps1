@@ -15,12 +15,14 @@ Write-Host "Platform: $Platform"
 # Restore NuGet packages
 Write-Host "`n--- Restoring NuGet packages ---" -ForegroundColor Yellow
 $slnPath = Join-Path $projectDir "FlowWatch.sln"
-nuget restore $slnPath
+$nuget = Join-Path $projectDir "nuget.exe"
+& $nuget restore $slnPath
 if ($LASTEXITCODE -ne 0) { throw "NuGet restore failed" }
 
 # Build
 Write-Host "`n--- Building ---" -ForegroundColor Yellow
-msbuild $slnPath /p:Configuration=$Configuration /p:Platform=$Platform /v:minimal
+$msbuild = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe"
+& $msbuild $slnPath /p:Configuration=$Configuration /p:Platform=$Platform /v:minimal
 if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
 # Package
