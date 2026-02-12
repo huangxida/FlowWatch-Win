@@ -22,6 +22,7 @@ namespace FlowWatch
         private AppTrafficWindow _appTrafficWindow;
         private MenuItem _autoHideItem;
         private MenuItem _lockItem;
+        private AboutWindow _aboutWindow;
         private UpdateWindow _updateWindow;
         private UpdateInfo _pendingUpdateInfo;
 
@@ -219,6 +220,9 @@ namespace FlowWatch
             var checkUpdateItem = new MenuItem { Header = loc.Get("Tray.CheckUpdate") };
             checkUpdateItem.Click += async (s, ev) => await ManualCheckForUpdate();
 
+            var aboutItem = new MenuItem { Header = loc.Get("Tray.About") };
+            aboutItem.Click += (s, ev) => ShowAbout();
+
             var separator = new Separator();
 
             var exitItem = new MenuItem { Header = loc.Get("Tray.Exit") };
@@ -230,6 +234,7 @@ namespace FlowWatch
             contextMenu.Items.Add(_autoHideItem);
             contextMenu.Items.Add(_lockItem);
             contextMenu.Items.Add(checkUpdateItem);
+            contextMenu.Items.Add(aboutItem);
             contextMenu.Items.Add(separator);
             contextMenu.Items.Add(exitItem);
 
@@ -277,6 +282,19 @@ namespace FlowWatch
             if (_appTrafficWindow == null)
                 _appTrafficWindow = new AppTrafficWindow();
             _appTrafficWindow.Show();
+        }
+
+        private void ShowAbout()
+        {
+            if (_aboutWindow != null)
+            {
+                _aboutWindow.Activate();
+                return;
+            }
+
+            _aboutWindow = new AboutWindow();
+            _aboutWindow.Closed += (s, ev) => _aboutWindow = null;
+            _aboutWindow.Show();
         }
 
         private void OnUpdateAvailable(UpdateInfo info)
@@ -377,6 +395,7 @@ namespace FlowWatch
             _settingsWindow?.ForceClose();
             _statisticsWindow?.ForceClose();
             _appTrafficWindow?.ForceClose();
+            _aboutWindow?.Close();
             _updateWindow?.Close();
 
             _trayIcon?.Dispose();
@@ -404,6 +423,7 @@ namespace FlowWatch
             _settingsWindow?.ForceClose();
             _statisticsWindow?.ForceClose();
             _appTrafficWindow?.ForceClose();
+            _aboutWindow?.Close();
 
             _trayIcon?.Dispose();
             _trayIcon = null;

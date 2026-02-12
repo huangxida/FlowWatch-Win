@@ -75,6 +75,14 @@
     <sys:String x:Key="Settings.SkippedVersionLabel">已跳过版本：</sys:String>
     <sys:String x:Key="Settings.ClearSkip">取消跳过</sys:String>
 
+    <!-- About -->
+    <sys:String x:Key="Tray.About">关于</sys:String>
+    <sys:String x:Key="About.WindowTitle">关于 FlowWatch</sys:String>
+    <sys:String x:Key="About.Description">轻量级网速监控悬浮窗工具</sys:String>
+    <sys:String x:Key="About.VersionFormat">版本 {0}</sys:String>
+    <sys:String x:Key="About.GitHubRepo">GitHub 仓库</sys:String>
+    <sys:String x:Key="About.Close">关闭</sys:String>
+
     <!-- Statistics Window -->
     <sys:String x:Key="Stats.WindowTitle">FlowWatch 流量统计</sys:String>
     <sys:String x:Key="Stats.Header">流量统计</sys:String>
