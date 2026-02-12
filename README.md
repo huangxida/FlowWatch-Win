@@ -1,22 +1,64 @@
 # FlowWatch
 
-透明悬浮的网速监控工具，启动后默认驻留系统托盘，在桌面显示实时网速卡片，可锁定置顶或解锁拖动，并支持刷新频率、布局与样式调整。
+轻量级透明悬浮网速监控工具，支持按应用流量监控和历史流量统计。
 
-基于 C# WPF (.NET Framework 4.8) 构建，产物体积 ~5-10MB，内存占用 <50MB。
+基于 C# WPF (.NET Framework 4.8) 构建，~5 MB 体积，<50 MB 内存占用。
+
+**[English](README.en.md) | 中文**
+
+---
+
+## 截图
+
+<table>
+<tr>
+<td align="center"><b>设置 — 常规</b></td>
+<td align="center"><b>设置 — 外观</b></td>
+</tr>
+<tr>
+<td><img src="assets/screenshots/settings-general-zh.png" width="320"/></td>
+<td><img src="assets/screenshots/settings-appearance-zh.png" width="320"/></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td align="center"><b>流量统计</b></td>
+<td align="center"><b>应用流量（实时）</b></td>
+<td align="center"><b>应用流量（按日）</b></td>
+</tr>
+<tr>
+<td><img src="assets/screenshots/statistics-zh.png" width="280"/></td>
+<td><img src="assets/screenshots/app-traffic-realtime-zh.png" width="280"/></td>
+<td><img src="assets/screenshots/app-traffic-daily-zh.png" width="280"/></td>
+</tr>
+</table>
 
 ## 功能
-- 托盘驻留：右键菜单提供"设置""固定桌面""置顶""退出"。
-- 悬浮窗：实时显示上/下行网速，记忆窗口位置；锁定时可穿透点击，解锁后可拖动。
-- 桌面固定：将悬浮窗挂在桌面层级，显示桌面时仍可见，与置顶互斥。
-- 布局切换：横向/纵向两种排布，方便放置在屏幕边角。
-- 显示模式：速率 / 流量 / 速率+流量 三种模式可切换。
-- 刷新频率：1–10 秒可调（默认 1 秒）。
-- 配色/字体：网速颜色渐变上限可调（默认 100 Mbps），支持自定义字体与字号（11–19px）。
-- 网卡选择：自动选择活跃网卡（优先以太网/Wi-Fi）。
-- 开机自启：默认开启，可在设置中关闭。
-- 单实例运行：避免重复启动。
 
-## 构建
+- **实时悬浮窗** — 透明悬浮窗显示实时上传/下载网速，颜色渐变指示速率
+- **按应用流量监控** — 基于 ETW 内核事件追踪各进程网络使用，支持实时速度/日/周/月视图
+- **流量统计** — 日/周/月流量历史柱状图，数据保留 90 天
+- **系统托盘** — 右键菜单：设置、流量统计、应用流量、固定桌面、置顶、退出
+- **锁定置顶** — 置顶并穿透点击，解锁后可拖动
+- **固定桌面** — 挂在桌面层级（显示桌面时仍可见），与置顶互斥
+- **布局** — 横向/纵向两种排布
+- **显示模式** — 速率 / 流量 / 速率+流量
+- **外观** — 自定义字体、字号（11–19px）、颜色渐变上限（1–1000 Mbps）
+- **开机自启** — 通过 Windows 任务计划程序以管理员权限自启
+- **语言切换** — 中文、英文、跟随系统，运行时即时切换
+- **单实例运行** — 避免重复启动
+
+## 系统要求
+
+- Windows 10 或更高版本（x64）
+- **需要管理员权限**（ETW 内核事件监控需要）
+
+## 安装
+
+从 [Releases](../../releases) 下载最新 ZIP，解压后运行 `FlowWatch.exe`。
+
+## 从源码构建
 
 需要 Visual Studio 2019+ 或 MSBuild + NuGet CLI。
 
@@ -26,40 +68,57 @@ nuget restore FlowWatch.sln
 msbuild FlowWatch.sln /p:Configuration=Release /p:Platform=x64
 ```
 
-或使用构建脚本：
+或使用构建脚本生成可分发 ZIP：
+
 ```powershell
 cd FlowWatch.Windows
 .\build.ps1 -Version 1.0.0
 ```
 
-构建产物位于 `FlowWatch.Windows\FlowWatch\bin\x64\Release\`。
+输出目录：`FlowWatch.Windows\FlowWatch\bin\x64\Release\`
 
-## 目录结构
+## 项目结构
+
 ```
 FlowWatch.Windows/
 ├── FlowWatch.sln
-├── FlowWatch/
-│   ├── FlowWatch.csproj
-│   ├── App.xaml / App.xaml.cs       # 入口、托盘、单实例
-│   ├── Services/                    # 网络监控、设置持久化、自启、桌面固定
-│   ├── ViewModels/                  # MVVM 数据绑定
-│   ├── Views/                       # 悬浮窗、设置窗口
-│   ├── Models/                      # 数据模型
-│   ├── Helpers/                     # Win32 互操作、格式化、颜色渐变
-│   └── Resources/                   # 图标、XAML 样式
-├── build.ps1
-└── build.bat
-assets/
-└── icon.png                         # 源图标 (256x256)
+├── build.ps1 / build.bat
+└── FlowWatch/
+    ├── App.xaml(.cs)              # 入口、托盘图标、单实例
+    ├── Services/
+    │   ├── NetworkMonitorService  # 系统网速轮询
+    │   ├── ProcessTrafficService  # 按应用 ETW 流量采集
+    │   ├── TrafficHistoryService  # 每日流量持久化
+    │   ├── SettingsService        # JSON 设置（原子写入）
+    │   ├── LocalizationService    # 国际化（中/英动态切换）
+    │   ├── DesktopPinService      # 固定到桌面层级
+    │   └── AutoLaunchService      # 任务计划程序自启
+    ├── ViewModels/                # MVVM 数据绑定
+    ├── Views/
+    │   ├── OverlayWindow          # 悬浮网速显示
+    │   ├── SettingsWindow         # 设置界面
+    │   ├── StatisticsWindow       # 流量统计图表
+    │   └── AppTrafficWindow       # 按应用流量详情
+    ├── Models/                    # 数据模型
+    ├── Helpers/                   # Win32 互操作、格式化、颜色渐变
+    └── Resources/
+        ├── Styles/                # WPF 样式
+        └── Strings/               # en-US.xaml, zh-CN.xaml
 ```
 
-## 设置项
-- 刷新频率：1–10 秒，默认 1 秒
-- 锁定悬浮窗置顶：保持置顶并可穿透点击，解锁后可拖动
-- 固定在桌面：挂在桌面层级，与置顶互斥
-- 开机自启：默认开启，可关闭
-- 布局：横向/纵向
-- 显示模式：速率 / 流量 / 速率+流量
-- 字体：自定义字体族
-- 字号：11–19px
-- 颜色上限：网速渐变红的阈值（Mbps）
+## 配置
+
+设置保存在 `%LOCALAPPDATA%\FlowWatch\settings.json`。
+
+| 设置项 | 默认值 | 说明 |
+|--------|--------|------|
+| Language | auto | `auto` / `en` / `zh` |
+| RefreshInterval | 1000 ms | 数据轮询间隔（1–10 秒） |
+| LockOnTop | true | 锁定置顶并穿透点击 |
+| PinToDesktop | false | 固定到桌面层级（与置顶互斥） |
+| AutoLaunch | true | 开机自启 |
+| Layout | horizontal | `horizontal` / `vertical` |
+| DisplayMode | speed | `speed` / `usage` / `both` |
+| FontFamily | Segoe UI, Microsoft YaHei | 自定义字体栈 |
+| FontSize | 18 | 悬浮窗字号（11–19px） |
+| SpeedColorMaxMbps | 100 | 白到红渐变阈值 |
