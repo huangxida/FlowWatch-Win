@@ -47,7 +47,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
-    <PackageReference Include="System.Text.Json" Version="6.0.10" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.28" />
+    <PackageReference Include="System.Text.Json" Version="9.0.8" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -63,6 +64,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\StatisticsWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\AppTrafficWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -87,6 +92,9 @@
     <Compile Include="Models\AppSettings.cs" />
     <Compile Include="Models\NetworkStats.cs" />
     <Compile Include="Models\DailyTrafficRecord.cs" />
+    <Compile Include="Models\AppTrafficHistory.cs" />
+    <Compile Include="Models\AppTrafficRecord.cs" />
+    <Compile Include="Models\DailyAppTrafficRecord.cs" />
     <Compile Include="Models\TrafficHistory.cs" />
     <Compile Include="Models\TrafficUsage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -95,9 +103,11 @@
     <Compile Include="Services\DesktopPinService.cs" />
     <Compile Include="Services\NetworkMonitorService.cs" />
     <Compile Include="Services\SettingsService.cs" />
+    <Compile Include="Services\ProcessTrafficService.cs" />
     <Compile Include="Services\TrafficHistoryService.cs" />
     <Compile Include="ViewModels\OverlayViewModel.cs" />
     <Compile Include="ViewModels\SettingsViewModel.cs" />
+    <Compile Include="ViewModels\AppTrafficViewModel.cs" />
     <Compile Include="ViewModels\StatisticsViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="Views\OverlayWindow.xaml.cs">
@@ -105,6 +115,9 @@
     </Compile>
     <Compile Include="Views\SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\AppTrafficWindow.xaml.cs">
+      <DependentUpon>AppTrafficWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\StatisticsWindow.xaml.cs">
       <DependentUpon>StatisticsWindow.xaml</DependentUpon>

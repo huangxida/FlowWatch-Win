@@ -13,5 +13,7 @@ namespace FlowWatch.Models
         public double? OverlayX { get; set; }
         public double? OverlayY { get; set; }
         public bool AutoLaunch { get; set; } = true;
+        public double? AppTrafficWindowWidth { get; set; }
+        public double? AppTrafficWindowHeight { get; set; }
     }
 }
