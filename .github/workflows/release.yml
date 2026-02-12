@@ -30,6 +30,17 @@ jobs:
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1.1.1
 
+      - name: Patch AssemblyInfo version
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $file = "FlowWatch/Properties/AssemblyInfo.cs"
+          $content = Get-Content $file -Raw
+          $content = $content -replace 'AssemblyVersion\(".*?"\)', "AssemblyVersion(`"$version.0`")"
+          $content = $content -replace 'AssemblyFileVersion\(".*?"\)', "AssemblyFileVersion(`"$version.0`")"
+          Set-Content $file $content -NoNewline
+          Write-Host "Patched AssemblyInfo.cs to version $version.0"
+
       - name: Restore NuGet packages
         run: nuget restore FlowWatch.sln
 

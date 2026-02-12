@@ -75,6 +75,14 @@
     <sys:String x:Key="Settings.SkippedVersionLabel">Skipped Version: </sys:String>
     <sys:String x:Key="Settings.ClearSkip">Clear</sys:String>
 
+    <!-- About -->
+    <sys:String x:Key="Tray.About">About</sys:String>
+    <sys:String x:Key="About.WindowTitle">About FlowWatch</sys:String>
+    <sys:String x:Key="About.Description">A lightweight network speed monitor overlay</sys:String>
+    <sys:String x:Key="About.VersionFormat">Version {0}</sys:String>
+    <sys:String x:Key="About.GitHubRepo">GitHub Repository</sys:String>
+    <sys:String x:Key="About.Close">Close</sys:String>
+
     <!-- Statistics Window -->
     <sys:String x:Key="Stats.WindowTitle">FlowWatch Statistics</sys:String>
     <sys:String x:Key="Stats.Header">Statistics</sys:String>

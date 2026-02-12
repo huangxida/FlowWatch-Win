@@ -16,6 +16,17 @@ Write-Host "Platform: $Platform"
 $slnPath = Join-Path $projectDir "FlowWatch.sln"
 
 if (-not $SkipBuild) {
+    # Patch AssemblyInfo.cs with version
+    $assemblyInfoPath = Join-Path $projectDir "FlowWatch\Properties\AssemblyInfo.cs"
+    if (Test-Path $assemblyInfoPath) {
+        $fourPartVersion = "$Version.0"
+        $content = Get-Content $assemblyInfoPath -Raw
+        $content = $content -replace 'AssemblyVersion\(".*?"\)', "AssemblyVersion(`"$fourPartVersion`")"
+        $content = $content -replace 'AssemblyFileVersion\(".*?"\)', "AssemblyFileVersion(`"$fourPartVersion`")"
+        Set-Content $assemblyInfoPath $content -NoNewline
+        Write-Host "Patched AssemblyInfo.cs to version $fourPartVersion" -ForegroundColor Green
+    }
+
     # Restore NuGet packages
     Write-Host "`n--- Restoring NuGet packages ---" -ForegroundColor Yellow
     $nuget = Join-Path $projectDir "nuget.exe"
