@@ -2,15 +2,15 @@ namespace FlowWatch.Helpers
 {
     public static class FormatHelper
     {
-        private static readonly string[] SpeedUnits = { "B/s", "KB/s", "MB/s", "GB/s" };
-        private static readonly string[] UsageUnits = { "B", "KB", "MB", "GB", "TB" };
+        private static readonly string[] SpeedUnits = { "KB/s", "MB/s", "GB/s" };
+        private static readonly string[] UsageUnits = { "KB", "MB", "GB", "TB" };
 
         public static (string Num, string Unit) FormatSpeed(double bytesPerSecond)
         {
-            if (bytesPerSecond <= 0)
-                return ("0", "B/s");
+            if (bytesPerSecond < 1024)
+                return ("0", "KB/s");
 
-            double value = bytesPerSecond;
+            double value = bytesPerSecond / 1024;
             int idx = 0;
             while (value >= 1024 && idx < SpeedUnits.Length - 1)
             {
@@ -18,16 +18,16 @@ namespace FlowWatch.Helpers
                 idx++;
             }
 
-            string num = (value >= 10 || idx == 0) ? value.ToString("F0") : value.ToString("F1");
+            string num = value >= 10 ? value.ToString("F0") : value.ToString("F1");
             return (num, SpeedUnits[idx]);
         }
 
         public static (string Num, string Unit) FormatUsage(long bytes)
         {
-            if (bytes <= 0)
-                return ("0", "B");
+            if (bytes < 1024)
+                return ("0", "KB");
 
-            double value = bytes;
+            double value = bytes / 1024.0;
             int idx = 0;
             while (value >= 1024 && idx < UsageUnits.Length - 1)
             {
@@ -35,7 +35,7 @@ namespace FlowWatch.Helpers
                 idx++;
             }
 
-            string num = (value >= 10 || idx == 0) ? value.ToString("F0") : value.ToString("F1");
+            string num = value >= 10 ? value.ToString("F0") : value.ToString("F1");
             return (num, UsageUnits[idx]);
         }
     }

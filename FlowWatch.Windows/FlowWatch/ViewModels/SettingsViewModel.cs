@@ -18,6 +18,7 @@ namespace FlowWatch.ViewModels
         private string _fontFamily = "Segoe UI, Microsoft YaHei, sans-serif";
         private int _fontSize = 18;
         private int _speedColorMaxMbps = 100;
+        private bool _smoothTransition = true;
         private bool _suppressPush;
         private string _skippedVersion;
         private bool _hasSkippedVersion;
@@ -196,6 +197,7 @@ namespace FlowWatch.ViewModels
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
+            _smoothTransition = s.SmoothTransition;
             UpdateSkippedVersion(s.SkippedVersion);
             _suppressPush = false;
         }
@@ -220,6 +222,7 @@ namespace FlowWatch.ViewModels
                 s.FontFamily = _fontFamily;
                 s.FontSize = _fontSize;
                 s.SpeedColorMaxMbps = _speedColorMaxMbps;
+                s.SmoothTransition = _smoothTransition;
             });
 
             AutoLaunchService.SetAutoLaunch(_autoLaunch);
@@ -245,6 +248,7 @@ namespace FlowWatch.ViewModels
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
+            _smoothTransition = s.SmoothTransition;
             _suppressPush = false;
         }
 

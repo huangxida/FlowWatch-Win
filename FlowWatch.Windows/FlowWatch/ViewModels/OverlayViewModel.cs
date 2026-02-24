@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using FlowWatch.Helpers;
 using FlowWatch.Models;
 using FlowWatch.Services;
@@ -10,13 +12,13 @@ namespace FlowWatch.ViewModels
     public class OverlayViewModel : ViewModelBase
     {
         private string _uploadNum = "0";
-        private string _uploadUnit = "B/s";
+        private string _uploadUnit = "KB/s";
         private string _downloadNum = "0";
-        private string _downloadUnit = "B/s";
+        private string _downloadUnit = "KB/s";
         private string _uploadUsageNum = "0";
-        private string _uploadUsageUnit = "B";
+        private string _uploadUsageUnit = "KB";
         private string _downloadUsageNum = "0";
-        private string _downloadUsageUnit = "B";
+        private string _downloadUsageUnit = "KB";
         private Brush _uploadColor = Brushes.White;
         private Brush _downloadColor = Brushes.White;
         private Brush _uploadLabelColor;
@@ -27,6 +29,20 @@ namespace FlowWatch.ViewModels
         private bool _isLocked = true;
         private string _displayMode = "speed";
         private Visibility _secondaryVisibility = Visibility.Collapsed;
+
+        // Smooth transition animation state (speed only, totals update directly)
+        private double _displayedDownSpeed, _displayedUpSpeed;
+        private double _startDownSpeed, _startUpSpeed;
+        private double _targetDownSpeed, _targetUpSpeed;
+        private long _currentTotalDown, _currentTotalUp;
+        private DispatcherTimer _animationTimer;
+        private long _animationStartTick;
+        private int _animationDurationMs = 1000;
+        private string _lastRenderedKey;
+        private string _targetRenderKey;
+        private bool _smoothTransition = true;
+        private long _lastDownColorQ = -1;
+        private long _lastUpColorQ = -1;
 
         private static readonly Brush DefaultUpLabelColor = new SolidColorBrush(Color.FromRgb(0x9E, 0xF6, 0xC5));
         private static readonly Brush DefaultDownLabelColor = new SolidColorBrush(Color.FromRgb(0xFF, 0xDA, 0x89));
@@ -168,20 +184,108 @@ namespace FlowWatch.ViewModels
 
         private void OnStatsUpdated(NetworkStats stats)
         {
+            _currentTotalDown = stats.TotalDownload;
+            _currentTotalUp = stats.TotalUpload;
+
+            if (_smoothTransition)
+            {
+                _targetDownSpeed = stats.DownloadSpeed;
+                _targetUpSpeed = stats.UploadSpeed;
+                StartAnimation();
+            }
+            else
+            {
+                _displayedDownSpeed = stats.DownloadSpeed;
+                _displayedUpSpeed = stats.UploadSpeed;
+                UpdateDisplay(stats.DownloadSpeed, stats.UploadSpeed, _currentTotalDown, _currentTotalUp);
+            }
+        }
+
+        private void StartAnimation()
+        {
+            _startDownSpeed = _displayedDownSpeed;
+            _startUpSpeed = _displayedUpSpeed;
+
+            if (_startDownSpeed == _targetDownSpeed && _startUpSpeed == _targetUpSpeed)
+            {
+                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
+                return;
+            }
+
+            _animationStartTick = Stopwatch.GetTimestamp();
+            _targetRenderKey = BuildRenderKey(_targetDownSpeed, _targetUpSpeed, _currentTotalDown, _currentTotalUp);
+
+            if (_animationTimer == null)
+            {
+                _animationTimer = new DispatcherTimer();
+                _animationTimer.Interval = TimeSpan.FromMilliseconds(100);
+                _animationTimer.Tick += (s, e) => AnimationTick();
+            }
+
+            if (!_animationTimer.IsEnabled)
+                _animationTimer.Start();
+        }
+
+        private void AnimationTick()
+        {
+            long now = Stopwatch.GetTimestamp();
+            double elapsedMs = (now - _animationStartTick) * 1000.0 / Stopwatch.Frequency;
+            double progress = Math.Min(elapsedMs / _animationDurationMs, 1.0);
+            double eased = 1.0 - Math.Pow(1.0 - progress, 3);
+
+            _displayedDownSpeed = _startDownSpeed + (_targetDownSpeed - _startDownSpeed) * eased;
+            _displayedUpSpeed = _startUpSpeed + (_targetUpSpeed - _startUpSpeed) * eased;
+
+            UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
+
+            if (progress >= 1.0 || _lastRenderedKey == _targetRenderKey)
+            {
+                _animationTimer.Stop();
+            }
+        }
+
+        private static string BuildRenderKey(
+            string mode,
+            string downNum, string downUnit, string upNum, string upUnit,
+            string downUsageNum, string downUsageUnit, string upUsageNum, string upUsageUnit,
+            long downColorQ, long upColorQ)
+        {
+            return $"{mode}|{downNum}|{downUnit}|{upNum}|{upUnit}|{downUsageNum}|{downUsageUnit}|{upUsageNum}|{upUsageUnit}|{downColorQ}|{upColorQ}";
+        }
+
+        private string BuildRenderKey(double downSpeed, double upSpeed, long totalDown, long totalUp)
+        {
+            var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed);
+            var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed);
+            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown);
+            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp);
+
+            const double colorStep = 262144.0;
+            long downColorQ = (long)(downSpeed / colorStep);
+            long upColorQ = (long)(upSpeed / colorStep);
+
+            return BuildRenderKey(_displayMode, downNum, downUnit, upNum, upUnit, downUsageNum, downUsageUnit, upUsageNum, upUsageUnit, downColorQ, upColorQ);
+        }
+
+        private void UpdateDisplay(double downSpeed, double upSpeed, long totalDown, long totalUp)
+        {
             var settings = SettingsService.Instance.Settings;
             int maxMbps = settings.SpeedColorMaxMbps;
 
-            // Format speed
-            var (upNum, upUnit) = FormatHelper.FormatSpeed(stats.UploadSpeed);
-            var (downNum, downUnit) = FormatHelper.FormatSpeed(stats.DownloadSpeed);
+            var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed);
+            var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed);
+            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown);
+            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp);
 
-            // Format usage
-            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(stats.TotalUpload);
-            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(stats.TotalDownload);
+            const double colorStep = 262144.0;
+            long downColorQ = (long)(downSpeed / colorStep);
+            long upColorQ = (long)(upSpeed / colorStep);
 
-            // Get colors
-            var upBrush = ColorGradient.GetSpeedBrush(stats.UploadSpeed, maxMbps);
-            var downBrush = ColorGradient.GetSpeedBrush(stats.DownloadSpeed, maxMbps);
+            string key = BuildRenderKey(_displayMode, downNum, downUnit, upNum, upUnit, downUsageNum, downUsageUnit, upUsageNum, upUsageUnit, downColorQ, upColorQ);
+
+            if (key == _lastRenderedKey)
+                return;
+            _lastRenderedKey = key;
 
             if (_displayMode == "usage")
             {
@@ -203,10 +307,21 @@ namespace FlowWatch.ViewModels
             DownloadUsageNum = downUsageNum;
             DownloadUsageUnit = downUsageUnit;
 
-            UploadColor = upBrush;
-            DownloadColor = downBrush;
-            UploadLabelColor = upBrush;
-            DownloadLabelColor = downBrush;
+            if (downColorQ != _lastDownColorQ)
+            {
+                _lastDownColorQ = downColorQ;
+                var downBrush = ColorGradient.GetSpeedBrush(downSpeed, maxMbps);
+                DownloadColor = downBrush;
+                DownloadLabelColor = downBrush;
+            }
+
+            if (upColorQ != _lastUpColorQ)
+            {
+                _lastUpColorQ = upColorQ;
+                var upBrush = ColorGradient.GetSpeedBrush(upSpeed, maxMbps);
+                UploadColor = upBrush;
+                UploadLabelColor = upBrush;
+            }
         }
 
         private void OnSettingsChanged()
@@ -218,17 +333,29 @@ namespace FlowWatch.ViewModels
         {
             var s = SettingsService.Instance.Settings;
 
-            // Parse font family - take first font name for WPF
             var fontName = s.FontFamily?.Split(',')[0]?.Trim() ?? "Segoe UI";
             FontFamily = new FontFamily(fontName);
             FontSize = Math.Max(11, Math.Min(19, s.FontSize));
             IsVertical = s.Layout == "vertical";
             IsLocked = s.LockOnTop;
             DisplayMode = s.DisplayMode ?? "speed";
+
+            _smoothTransition = s.SmoothTransition;
+            // Animation completes exactly as the next sample arrives
+            _animationDurationMs = s.RefreshInterval;
+
+            if (!_smoothTransition)
+            {
+                _animationTimer?.Stop();
+                _displayedDownSpeed = _targetDownSpeed;
+                _displayedUpSpeed = _targetUpSpeed;
+                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
+            }
         }
 
         public void Cleanup()
         {
+            _animationTimer?.Stop();
             NetworkMonitorService.Instance.StatsUpdated -= OnStatsUpdated;
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
         }
