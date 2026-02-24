@@ -19,5 +19,6 @@ namespace FlowWatch.Models
         public bool AutoCheckUpdate { get; set; } = true;
         public string LastUpdateCheck { get; set; }
         public string SkippedVersion { get; set; }
+        public bool SmoothTransition { get; set; } = true;
     }
 }

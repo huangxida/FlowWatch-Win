@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using FlowWatch.Helpers;
 using FlowWatch.Models;
 using FlowWatch.Services;
@@ -27,6 +29,19 @@ namespace FlowWatch.ViewModels
         private bool _isLocked = true;
         private string _displayMode = "speed";
         private Visibility _secondaryVisibility = Visibility.Collapsed;
+
+        // Smooth transition animation state
+        private double _displayedDownSpeed, _displayedUpSpeed, _displayedTotalDown, _displayedTotalUp;
+        private double _startDownSpeed, _startUpSpeed, _startTotalDown, _startTotalUp;
+        private double _targetDownSpeed, _targetUpSpeed, _targetTotalDown, _targetTotalUp;
+        private DispatcherTimer _animationTimer;
+        private long _animationStartTick;
+        private int _animationDurationMs = 1000;
+        private string _lastRenderedKey;
+        private string _targetRenderKey;
+        private bool _smoothTransition = true;
+        private long _lastDownColorQ = -1;
+        private long _lastUpColorQ = -1;
 
         private static readonly Brush DefaultUpLabelColor = new SolidColorBrush(Color.FromRgb(0x9E, 0xF6, 0xC5));
         private static readonly Brush DefaultDownLabelColor = new SolidColorBrush(Color.FromRgb(0xFF, 0xDA, 0x89));
@@ -168,20 +183,98 @@ namespace FlowWatch.ViewModels
 
         private void OnStatsUpdated(NetworkStats stats)
         {
+            if (_smoothTransition)
+            {
+                _targetDownSpeed = stats.DownloadSpeed;
+                _targetUpSpeed = stats.UploadSpeed;
+                _targetTotalDown = stats.TotalDownload;
+                _targetTotalUp = stats.TotalUpload;
+                StartAnimation();
+            }
+            else
+            {
+                UpdateDisplay(stats.DownloadSpeed, stats.UploadSpeed, stats.TotalDownload, stats.TotalUpload);
+            }
+        }
+
+        private void StartAnimation()
+        {
+            _startDownSpeed = _displayedDownSpeed;
+            _startUpSpeed = _displayedUpSpeed;
+            _startTotalDown = _displayedTotalDown;
+            _startTotalUp = _displayedTotalUp;
+
+            if (_startDownSpeed == _targetDownSpeed && _startUpSpeed == _targetUpSpeed &&
+                _startTotalDown == _targetTotalDown && _startTotalUp == _targetTotalUp)
+                return;
+
+            _animationStartTick = Stopwatch.GetTimestamp();
+            _targetRenderKey = ComputeRenderKey(_targetDownSpeed, _targetUpSpeed, _targetTotalDown, _targetTotalUp);
+
+            if (_animationTimer == null)
+            {
+                _animationTimer = new DispatcherTimer();
+                _animationTimer.Interval = TimeSpan.FromMilliseconds(100);
+                _animationTimer.Tick += (s, e) => AnimationTick();
+            }
+
+            if (!_animationTimer.IsEnabled)
+                _animationTimer.Start();
+        }
+
+        private void AnimationTick()
+        {
+            long now = Stopwatch.GetTimestamp();
+            double elapsedMs = (now - _animationStartTick) * 1000.0 / Stopwatch.Frequency;
+            double progress = Math.Min(elapsedMs / _animationDurationMs, 1.0);
+            double eased = 1.0 - Math.Pow(1.0 - progress, 3);
+
+            _displayedDownSpeed = _startDownSpeed + (_targetDownSpeed - _startDownSpeed) * eased;
+            _displayedUpSpeed = _startUpSpeed + (_targetUpSpeed - _startUpSpeed) * eased;
+            _displayedTotalDown = _startTotalDown + (_targetTotalDown - _startTotalDown) * eased;
+            _displayedTotalUp = _startTotalUp + (_targetTotalUp - _startTotalUp) * eased;
+
+            UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _displayedTotalDown, _displayedTotalUp);
+
+            if (progress >= 1.0 || _lastRenderedKey == _targetRenderKey)
+            {
+                _animationTimer.Stop();
+            }
+        }
+
+        private string ComputeRenderKey(double downSpeed, double upSpeed, double totalDown, double totalUp)
+        {
+            var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed);
+            var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed);
+            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage((long)totalDown);
+            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage((long)totalUp);
+
+            const double colorStep = 262144.0;
+            long downColorQ = (long)(downSpeed / colorStep);
+            long upColorQ = (long)(upSpeed / colorStep);
+
+            return $"{_displayMode}|{downNum}|{downUnit}|{upNum}|{upUnit}|{downUsageNum}|{downUsageUnit}|{upUsageNum}|{upUsageUnit}|{downColorQ}|{upColorQ}";
+        }
+
+        private void UpdateDisplay(double downSpeed, double upSpeed, double totalDown, double totalUp)
+        {
             var settings = SettingsService.Instance.Settings;
             int maxMbps = settings.SpeedColorMaxMbps;
 
-            // Format speed
-            var (upNum, upUnit) = FormatHelper.FormatSpeed(stats.UploadSpeed);
-            var (downNum, downUnit) = FormatHelper.FormatSpeed(stats.DownloadSpeed);
+            var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed);
+            var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed);
+            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage((long)totalDown);
+            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage((long)totalUp);
 
-            // Format usage
-            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(stats.TotalUpload);
-            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(stats.TotalDownload);
+            const double colorStep = 262144.0;
+            long downColorQ = (long)(downSpeed / colorStep);
+            long upColorQ = (long)(upSpeed / colorStep);
 
-            // Get colors
-            var upBrush = ColorGradient.GetSpeedBrush(stats.UploadSpeed, maxMbps);
-            var downBrush = ColorGradient.GetSpeedBrush(stats.DownloadSpeed, maxMbps);
+            string key = $"{_displayMode}|{downNum}|{downUnit}|{upNum}|{upUnit}|{downUsageNum}|{downUsageUnit}|{upUsageNum}|{upUsageUnit}|{downColorQ}|{upColorQ}";
+
+            if (key == _lastRenderedKey)
+                return;
+            _lastRenderedKey = key;
 
             if (_displayMode == "usage")
             {
@@ -203,10 +296,21 @@ namespace FlowWatch.ViewModels
             DownloadUsageNum = downUsageNum;
             DownloadUsageUnit = downUsageUnit;
 
-            UploadColor = upBrush;
-            DownloadColor = downBrush;
-            UploadLabelColor = upBrush;
-            DownloadLabelColor = downBrush;
+            if (downColorQ != _lastDownColorQ)
+            {
+                _lastDownColorQ = downColorQ;
+                var downBrush = ColorGradient.GetSpeedBrush(downSpeed, maxMbps);
+                DownloadColor = downBrush;
+                DownloadLabelColor = downBrush;
+            }
+
+            if (upColorQ != _lastUpColorQ)
+            {
+                _lastUpColorQ = upColorQ;
+                var upBrush = ColorGradient.GetSpeedBrush(upSpeed, maxMbps);
+                UploadColor = upBrush;
+                UploadLabelColor = upBrush;
+            }
         }
 
         private void OnSettingsChanged()
@@ -218,17 +322,30 @@ namespace FlowWatch.ViewModels
         {
             var s = SettingsService.Instance.Settings;
 
-            // Parse font family - take first font name for WPF
             var fontName = s.FontFamily?.Split(',')[0]?.Trim() ?? "Segoe UI";
             FontFamily = new FontFamily(fontName);
             FontSize = Math.Max(11, Math.Min(19, s.FontSize));
             IsVertical = s.Layout == "vertical";
             IsLocked = s.LockOnTop;
             DisplayMode = s.DisplayMode ?? "speed";
+
+            _smoothTransition = s.SmoothTransition;
+            _animationDurationMs = s.RefreshInterval;
+
+            if (!_smoothTransition)
+            {
+                _animationTimer?.Stop();
+                _displayedDownSpeed = _targetDownSpeed;
+                _displayedUpSpeed = _targetUpSpeed;
+                _displayedTotalDown = _targetTotalDown;
+                _displayedTotalUp = _targetTotalUp;
+                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _displayedTotalDown, _displayedTotalUp);
+            }
         }
 
         public void Cleanup()
         {
+            _animationTimer?.Stop();
             NetworkMonitorService.Instance.StatsUpdated -= OnStatsUpdated;
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
         }
