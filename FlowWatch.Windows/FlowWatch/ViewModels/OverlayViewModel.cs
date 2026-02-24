@@ -12,13 +12,13 @@ namespace FlowWatch.ViewModels
     public class OverlayViewModel : ViewModelBase
     {
         private string _uploadNum = "0";
-        private string _uploadUnit = "B/s";
+        private string _uploadUnit = "KB/s";
         private string _downloadNum = "0";
-        private string _downloadUnit = "B/s";
+        private string _downloadUnit = "KB/s";
         private string _uploadUsageNum = "0";
-        private string _uploadUsageUnit = "B";
+        private string _uploadUsageUnit = "KB";
         private string _downloadUsageNum = "0";
-        private string _downloadUsageUnit = "B";
+        private string _downloadUsageUnit = "KB";
         private Brush _uploadColor = Brushes.White;
         private Brush _downloadColor = Brushes.White;
         private Brush _uploadLabelColor;
@@ -30,10 +30,11 @@ namespace FlowWatch.ViewModels
         private string _displayMode = "speed";
         private Visibility _secondaryVisibility = Visibility.Collapsed;
 
-        // Smooth transition animation state
-        private double _displayedDownSpeed, _displayedUpSpeed, _displayedTotalDown, _displayedTotalUp;
-        private double _startDownSpeed, _startUpSpeed, _startTotalDown, _startTotalUp;
-        private double _targetDownSpeed, _targetUpSpeed, _targetTotalDown, _targetTotalUp;
+        // Smooth transition animation state (speed only, totals update directly)
+        private double _displayedDownSpeed, _displayedUpSpeed;
+        private double _startDownSpeed, _startUpSpeed;
+        private double _targetDownSpeed, _targetUpSpeed;
+        private long _currentTotalDown, _currentTotalUp;
         private DispatcherTimer _animationTimer;
         private long _animationStartTick;
         private int _animationDurationMs = 1000;
@@ -183,17 +184,20 @@ namespace FlowWatch.ViewModels
 
         private void OnStatsUpdated(NetworkStats stats)
         {
+            _currentTotalDown = stats.TotalDownload;
+            _currentTotalUp = stats.TotalUpload;
+
             if (_smoothTransition)
             {
                 _targetDownSpeed = stats.DownloadSpeed;
                 _targetUpSpeed = stats.UploadSpeed;
-                _targetTotalDown = stats.TotalDownload;
-                _targetTotalUp = stats.TotalUpload;
                 StartAnimation();
             }
             else
             {
-                UpdateDisplay(stats.DownloadSpeed, stats.UploadSpeed, stats.TotalDownload, stats.TotalUpload);
+                _displayedDownSpeed = stats.DownloadSpeed;
+                _displayedUpSpeed = stats.UploadSpeed;
+                UpdateDisplay(stats.DownloadSpeed, stats.UploadSpeed, _currentTotalDown, _currentTotalUp);
             }
         }
 
@@ -201,15 +205,12 @@ namespace FlowWatch.ViewModels
         {
             _startDownSpeed = _displayedDownSpeed;
             _startUpSpeed = _displayedUpSpeed;
-            _startTotalDown = _displayedTotalDown;
-            _startTotalUp = _displayedTotalUp;
 
-            if (_startDownSpeed == _targetDownSpeed && _startUpSpeed == _targetUpSpeed &&
-                _startTotalDown == _targetTotalDown && _startTotalUp == _targetTotalUp)
+            if (_startDownSpeed == _targetDownSpeed && _startUpSpeed == _targetUpSpeed)
                 return;
 
             _animationStartTick = Stopwatch.GetTimestamp();
-            _targetRenderKey = ComputeRenderKey(_targetDownSpeed, _targetUpSpeed, _targetTotalDown, _targetTotalUp);
+            _targetRenderKey = BuildRenderKey(_targetDownSpeed, _targetUpSpeed, _currentTotalDown, _currentTotalUp);
 
             if (_animationTimer == null)
             {
@@ -231,10 +232,8 @@ namespace FlowWatch.ViewModels
 
             _displayedDownSpeed = _startDownSpeed + (_targetDownSpeed - _startDownSpeed) * eased;
             _displayedUpSpeed = _startUpSpeed + (_targetUpSpeed - _startUpSpeed) * eased;
-            _displayedTotalDown = _startTotalDown + (_targetTotalDown - _startTotalDown) * eased;
-            _displayedTotalUp = _startTotalUp + (_targetTotalUp - _startTotalUp) * eased;
 
-            UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _displayedTotalDown, _displayedTotalUp);
+            UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
 
             if (progress >= 1.0 || _lastRenderedKey == _targetRenderKey)
             {
@@ -242,35 +241,44 @@ namespace FlowWatch.ViewModels
             }
         }
 
-        private string ComputeRenderKey(double downSpeed, double upSpeed, double totalDown, double totalUp)
+        private static string BuildRenderKey(
+            string mode,
+            string downNum, string downUnit, string upNum, string upUnit,
+            string downUsageNum, string downUsageUnit, string upUsageNum, string upUsageUnit,
+            long downColorQ, long upColorQ)
+        {
+            return $"{mode}|{downNum}|{downUnit}|{upNum}|{upUnit}|{downUsageNum}|{downUsageUnit}|{upUsageNum}|{upUsageUnit}|{downColorQ}|{upColorQ}";
+        }
+
+        private string BuildRenderKey(double downSpeed, double upSpeed, long totalDown, long totalUp)
         {
             var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed);
             var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed);
-            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage((long)totalDown);
-            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage((long)totalUp);
+            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown);
+            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp);
 
             const double colorStep = 262144.0;
             long downColorQ = (long)(downSpeed / colorStep);
             long upColorQ = (long)(upSpeed / colorStep);
 
-            return $"{_displayMode}|{downNum}|{downUnit}|{upNum}|{upUnit}|{downUsageNum}|{downUsageUnit}|{upUsageNum}|{upUsageUnit}|{downColorQ}|{upColorQ}";
+            return BuildRenderKey(_displayMode, downNum, downUnit, upNum, upUnit, downUsageNum, downUsageUnit, upUsageNum, upUsageUnit, downColorQ, upColorQ);
         }
 
-        private void UpdateDisplay(double downSpeed, double upSpeed, double totalDown, double totalUp)
+        private void UpdateDisplay(double downSpeed, double upSpeed, long totalDown, long totalUp)
         {
             var settings = SettingsService.Instance.Settings;
             int maxMbps = settings.SpeedColorMaxMbps;
 
             var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed);
             var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed);
-            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage((long)totalDown);
-            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage((long)totalUp);
+            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown);
+            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp);
 
             const double colorStep = 262144.0;
             long downColorQ = (long)(downSpeed / colorStep);
             long upColorQ = (long)(upSpeed / colorStep);
 
-            string key = $"{_displayMode}|{downNum}|{downUnit}|{upNum}|{upUnit}|{downUsageNum}|{downUsageUnit}|{upUsageNum}|{upUsageUnit}|{downColorQ}|{upColorQ}";
+            string key = BuildRenderKey(_displayMode, downNum, downUnit, upNum, upUnit, downUsageNum, downUsageUnit, upUsageNum, upUsageUnit, downColorQ, upColorQ);
 
             if (key == _lastRenderedKey)
                 return;
@@ -337,9 +345,7 @@ namespace FlowWatch.ViewModels
                 _animationTimer?.Stop();
                 _displayedDownSpeed = _targetDownSpeed;
                 _displayedUpSpeed = _targetUpSpeed;
-                _displayedTotalDown = _targetTotalDown;
-                _displayedTotalUp = _targetTotalUp;
-                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _displayedTotalDown, _displayedTotalUp);
+                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
             }
         }
 
