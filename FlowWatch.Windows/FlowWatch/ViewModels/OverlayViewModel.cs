@@ -207,7 +207,10 @@ namespace FlowWatch.ViewModels
             _startUpSpeed = _displayedUpSpeed;
 
             if (_startDownSpeed == _targetDownSpeed && _startUpSpeed == _targetUpSpeed)
+            {
+                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
                 return;
+            }
 
             _animationStartTick = Stopwatch.GetTimestamp();
             _targetRenderKey = BuildRenderKey(_targetDownSpeed, _targetUpSpeed, _currentTotalDown, _currentTotalUp);
@@ -338,6 +341,7 @@ namespace FlowWatch.ViewModels
             DisplayMode = s.DisplayMode ?? "speed";
 
             _smoothTransition = s.SmoothTransition;
+            // Animation completes exactly as the next sample arrives
             _animationDurationMs = s.RefreshInterval;
 
             if (!_smoothTransition)
