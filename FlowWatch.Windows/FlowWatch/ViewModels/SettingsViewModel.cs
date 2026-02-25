@@ -157,6 +157,16 @@ namespace FlowWatch.ViewModels
             }
         }
 
+        public bool SmoothTransition
+        {
+            get => _smoothTransition;
+            set
+            {
+                if (SetProperty(ref _smoothTransition, value))
+                    PushSettings();
+            }
+        }
+
         public string CurrentVersion => UpdateService.Instance.GetCurrentVersion().ToString(3);
 
         public string SkippedVersion
@@ -197,7 +207,7 @@ namespace FlowWatch.ViewModels
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
-            _smoothTransition = s.SmoothTransition;
+            SmoothTransition = s.SmoothTransition;
             UpdateSkippedVersion(s.SkippedVersion);
             _suppressPush = false;
         }
@@ -248,7 +258,7 @@ namespace FlowWatch.ViewModels
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
-            _smoothTransition = s.SmoothTransition;
+            SmoothTransition = s.SmoothTransition;
             _suppressPush = false;
         }
 
