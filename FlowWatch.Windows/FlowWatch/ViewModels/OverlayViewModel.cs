@@ -30,11 +30,13 @@ namespace FlowWatch.ViewModels
         private string _displayMode = "speed";
         private Visibility _secondaryVisibility = Visibility.Collapsed;
 
-        // Smooth transition animation state (speed only, totals update directly)
+        // Smooth transition animation state
         private double _displayedDownSpeed, _displayedUpSpeed;
         private double _startDownSpeed, _startUpSpeed;
         private double _targetDownSpeed, _targetUpSpeed;
-        private long _currentTotalDown, _currentTotalUp;
+        private double _displayedTotalDown, _displayedTotalUp;
+        private double _startTotalDown, _startTotalUp;
+        private double _targetTotalDown, _targetTotalUp;
         private DispatcherTimer _animationTimer;
         private long _animationStartTick;
         private int _animationDurationMs = 1000;
@@ -184,20 +186,21 @@ namespace FlowWatch.ViewModels
 
         private void OnStatsUpdated(NetworkStats stats)
         {
-            _currentTotalDown = stats.TotalDownload;
-            _currentTotalUp = stats.TotalUpload;
-
             if (_smoothTransition)
             {
                 _targetDownSpeed = stats.DownloadSpeed;
                 _targetUpSpeed = stats.UploadSpeed;
+                _targetTotalDown = stats.TotalDownload;
+                _targetTotalUp = stats.TotalUpload;
                 StartAnimation();
             }
             else
             {
                 _displayedDownSpeed = stats.DownloadSpeed;
                 _displayedUpSpeed = stats.UploadSpeed;
-                UpdateDisplay(stats.DownloadSpeed, stats.UploadSpeed, _currentTotalDown, _currentTotalUp);
+                _displayedTotalDown = stats.TotalDownload;
+                _displayedTotalUp = stats.TotalUpload;
+                UpdateDisplay(stats.DownloadSpeed, stats.UploadSpeed, stats.TotalDownload, stats.TotalUpload);
             }
         }
 
@@ -205,15 +208,17 @@ namespace FlowWatch.ViewModels
         {
             _startDownSpeed = _displayedDownSpeed;
             _startUpSpeed = _displayedUpSpeed;
+            _startTotalDown = _displayedTotalDown;
+            _startTotalUp = _displayedTotalUp;
 
-            if (_startDownSpeed == _targetDownSpeed && _startUpSpeed == _targetUpSpeed)
+            if (_startDownSpeed == _targetDownSpeed && _startUpSpeed == _targetUpSpeed
+                && _startTotalDown == _targetTotalDown && _startTotalUp == _targetTotalUp)
             {
-                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
                 return;
             }
 
             _animationStartTick = Stopwatch.GetTimestamp();
-            _targetRenderKey = BuildRenderKey(_targetDownSpeed, _targetUpSpeed, _currentTotalDown, _currentTotalUp);
+            _targetRenderKey = BuildRenderKey(_targetDownSpeed, _targetUpSpeed, (long)_targetTotalDown, (long)_targetTotalUp);
 
             if (_animationTimer == null)
             {
@@ -235,8 +240,10 @@ namespace FlowWatch.ViewModels
 
             _displayedDownSpeed = _startDownSpeed + (_targetDownSpeed - _startDownSpeed) * eased;
             _displayedUpSpeed = _startUpSpeed + (_targetUpSpeed - _startUpSpeed) * eased;
+            _displayedTotalDown = _startTotalDown + (_targetTotalDown - _startTotalDown) * eased;
+            _displayedTotalUp = _startTotalUp + (_targetTotalUp - _startTotalUp) * eased;
 
-            UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
+            UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, (long)_displayedTotalDown, (long)_displayedTotalUp);
 
             if (progress >= 1.0 || _lastRenderedKey == _targetRenderKey)
             {
@@ -349,7 +356,9 @@ namespace FlowWatch.ViewModels
                 _animationTimer?.Stop();
                 _displayedDownSpeed = _targetDownSpeed;
                 _displayedUpSpeed = _targetUpSpeed;
-                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, _currentTotalDown, _currentTotalUp);
+                _displayedTotalDown = _targetTotalDown;
+                _displayedTotalUp = _targetTotalUp;
+                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, (long)_displayedTotalDown, (long)_displayedTotalUp);
             }
         }
 

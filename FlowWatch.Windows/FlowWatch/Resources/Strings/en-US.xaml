@@ -37,6 +37,8 @@
     <sys:String x:Key="Settings.DisplaySpeed">Speed</sys:String>
     <sys:String x:Key="Settings.DisplayUsage">Usage</sys:String>
     <sys:String x:Key="Settings.DisplayBoth">Speed+Usage</sys:String>
+    <sys:String x:Key="Settings.SmoothTransition">Smooth Transition</sys:String>
+    <sys:String x:Key="Settings.SmoothTransitionHint">Animate speed and usage changes smoothly</sys:String>
     <sys:String x:Key="Settings.Appearance">Appearance</sys:String>
     <sys:String x:Key="Settings.Font">Font</sys:String>
     <sys:String x:Key="Settings.FontPreset">Font Presets...</sys:String>

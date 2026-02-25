@@ -37,6 +37,8 @@
     <sys:String x:Key="Settings.DisplaySpeed">速率</sys:String>
     <sys:String x:Key="Settings.DisplayUsage">流量</sys:String>
     <sys:String x:Key="Settings.DisplayBoth">速率+流量</sys:String>
+    <sys:String x:Key="Settings.SmoothTransition">平滑过渡</sys:String>
+    <sys:String x:Key="Settings.SmoothTransitionHint">速率和流量变化时使用平滑动画过渡</sys:String>
     <sys:String x:Key="Settings.Appearance">外观</sys:String>
     <sys:String x:Key="Settings.Font">字体</sys:String>
     <sys:String x:Key="Settings.FontPreset">预设字体...</sys:String>
