@@ -43,6 +43,7 @@ namespace FlowWatch.ViewModels
         private string _lastRenderedKey;
         private string _targetRenderKey;
         private bool _smoothTransition = true;
+        private bool _totalsInitialized;
         private long _lastDownColorQ = -1;
         private long _lastUpColorQ = -1;
 
@@ -186,6 +187,15 @@ namespace FlowWatch.ViewModels
 
         private void OnStatsUpdated(NetworkStats stats)
         {
+            if (!_totalsInitialized)
+            {
+                _displayedTotalDown = stats.TotalDownload;
+                _displayedTotalUp = stats.TotalUpload;
+                _targetTotalDown = stats.TotalDownload;
+                _targetTotalUp = stats.TotalUpload;
+                _totalsInitialized = true;
+            }
+
             if (_smoothTransition)
             {
                 _targetDownSpeed = stats.DownloadSpeed;
