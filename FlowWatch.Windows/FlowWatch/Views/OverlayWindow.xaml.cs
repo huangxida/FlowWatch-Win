@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using FlowWatch.Helpers;
 using FlowWatch.Services;
@@ -15,18 +17,34 @@ namespace FlowWatch.Views
         private bool _suppressSave;
         private DispatcherTimer _autoHideTimer;
         private bool _isAutoHideVisible = true;
+        private readonly Stopwatch _startupStopwatch;
 
         public OverlayWindow()
         {
+            _startupStopwatch = Stopwatch.StartNew();
+            LogService.Info("OverlayWindow ctor start");
             InitializeComponent();
+            LogService.Info($"OverlayWindow InitializeComponent completed in {_startupStopwatch.ElapsedMilliseconds} ms");
             _vm = (OverlayViewModel)DataContext;
+            LogService.Info($"OverlayWindow DataContext ready in {_startupStopwatch.ElapsedMilliseconds} ms");
 
+            SourceInitialized += OnSourceInitialized;
             Loaded += OnLoaded;
+            ContentRendered += OnContentRendered;
             LocationChanged += OnLocationChanged;
+        }
+
+        private void OnSourceInitialized(object sender, EventArgs e)
+        {
+            var tier = RenderCapability.Tier >> 16;
+            LogService.Info(
+                $"OverlayWindow SourceInitialized at {_startupStopwatch.ElapsedMilliseconds} ms (RenderTier={tier})");
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            var loadedStartMs = _startupStopwatch.ElapsedMilliseconds;
+
             // Restore saved position
             _suppressSave = true;
             var settings = SettingsService.Instance.Settings;
@@ -45,6 +63,14 @@ namespace FlowWatch.Views
             ApplyAutoHideState();
 
             SettingsService.Instance.SettingsChanged += OnSettingsChanged;
+
+            LogService.Info(
+                $"OverlayWindow Loaded completed in {_startupStopwatch.ElapsedMilliseconds} ms (handler={_startupStopwatch.ElapsedMilliseconds - loadedStartMs} ms)");
+        }
+
+        private void OnContentRendered(object sender, EventArgs e)
+        {
+            LogService.Info($"OverlayWindow ContentRendered at {_startupStopwatch.ElapsedMilliseconds} ms");
         }
 
         private void OnLocationChanged(object sender, EventArgs e)
