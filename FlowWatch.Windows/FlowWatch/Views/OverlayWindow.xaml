@@ -66,7 +66,7 @@
                                    Margin="2,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="&#x2191;" Style="{StaticResource LabelStyle}"
+                <TextBlock Grid.Column="1" Text="▲" Style="{StaticResource LabelStyle}"
                            Foreground="{Binding UploadLabelColor}" VerticalAlignment="Center" Margin="4,0,0,0"/>
             </Grid>
 
@@ -100,7 +100,7 @@
                                    Margin="2,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="&#x2193;" Style="{StaticResource LabelStyle}"
+                <TextBlock Grid.Column="1" Text="▼" Style="{StaticResource LabelStyle}"
                            Foreground="{Binding DownloadLabelColor}" VerticalAlignment="Center" Margin="4,0,0,0"/>
             </Grid>
         </Grid>
@@ -147,7 +147,7 @@
                                    FontSize="{Binding FontSize}" Margin="2,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="&#x2191;" Style="{StaticResource LabelStyle}"
+                <TextBlock Grid.Column="1" Text="▲" Style="{StaticResource LabelStyle}"
                            Foreground="{Binding UploadLabelColor}" VerticalAlignment="Center" Margin="4,0,0,0"/>
             </Grid>
 
@@ -180,7 +180,7 @@
                                    FontSize="{Binding FontSize}" Margin="2,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="&#x2193;" Style="{StaticResource LabelStyle}"
+                <TextBlock Grid.Column="1" Text="▼" Style="{StaticResource LabelStyle}"
                            Foreground="{Binding DownloadLabelColor}" VerticalAlignment="Center" Margin="4,0,0,0"/>
             </Grid>
         </StackPanel>
