@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -83,8 +84,11 @@ namespace FlowWatch
 
                 // Create overlay window
                 LogService.Info("创建悬浮窗...");
+                var overlayStopwatch = Stopwatch.StartNew();
                 _overlayWindow = new OverlayWindow();
+                LogService.Info($"OverlayWindow constructor returned in {overlayStopwatch.ElapsedMilliseconds} ms");
                 _overlayWindow.Show();
+                LogService.Info($"OverlayWindow.Show returned in {overlayStopwatch.ElapsedMilliseconds} ms");
                 LogService.Info("悬浮窗已显示");
 
                 // Create settings window (hidden)

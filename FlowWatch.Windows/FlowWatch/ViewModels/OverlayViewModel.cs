@@ -350,8 +350,7 @@ namespace FlowWatch.ViewModels
         {
             var s = SettingsService.Instance.Settings;
 
-            var fontName = s.FontFamily?.Split(',')[0]?.Trim() ?? "Segoe UI";
-            FontFamily = new FontFamily(fontName);
+            FontFamily = FontHelper.ResolveFontFamily(s.FontFamily, "overlay");
             FontSize = Math.Max(11, Math.Min(19, s.FontSize));
             IsVertical = s.Layout == "vertical";
             IsLocked = s.LockOnTop;
