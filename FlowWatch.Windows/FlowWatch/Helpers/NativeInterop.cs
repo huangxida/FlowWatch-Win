@@ -15,10 +15,13 @@ namespace FlowWatch.Helpers
     {
         public const int GWL_EXSTYLE = -20;
         public const int GWL_STYLE = -16;
+        public const int WS_EX_TOPMOST = 0x00000008;
         public const int WS_EX_TRANSPARENT = 0x00000020;
         public const int WS_EX_TOOLWINDOW = 0x00000080;
         public const int WS_CHILD = 0x40000000;
         public const uint WS_POPUP = 0x80000000;
+        public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        public static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
 
         public const uint SWP_NOMOVE = 0x0002;
         public const uint SWP_NOSIZE = 0x0001;
@@ -100,6 +103,18 @@ namespace FlowWatch.Helpers
             var exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
             exStyle = new IntPtr(exStyle.ToInt64() | WS_EX_TOOLWINDOW);
             SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle);
+        }
+
+        public static long GetExStyle(IntPtr hwnd)
+        {
+            if (hwnd == IntPtr.Zero) return 0;
+            return GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
+        }
+
+        public static bool IsTopMost(IntPtr hwnd)
+        {
+            var exStyle = GetExStyle(hwnd);
+            return (exStyle & WS_EX_TOPMOST) != 0;
         }
     }
 }
