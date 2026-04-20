@@ -9,6 +9,7 @@
     <sys:String x:Key="Tray.AppTraffic">应用流量</sys:String>
     <sys:String x:Key="Tray.AutoHide">自动隐藏</sys:String>
     <sys:String x:Key="Tray.LockOnTop">置顶</sys:String>
+    <sys:String x:Key="Tray.ReassertTopmost">重新置顶并记录诊断</sys:String>
     <sys:String x:Key="Tray.Exit">退出</sys:String>
 
     <!-- Common Messages -->
@@ -75,7 +76,7 @@
     <sys:String x:Key="Settings.AutoCheckUpdateHint">每 24 小时自动检查一次新版本</sys:String>
     <sys:String x:Key="Settings.CurrentVersionLabel">当前版本：</sys:String>
     <sys:String x:Key="Settings.SkippedVersionLabel">已跳过版本：</sys:String>
-    <sys:String x:Key="Settings.ClearSkip">取消跳过</sys:String>
+    <sys:String x:Key="Settings.ClearSkip">清除</sys:String>
 
     <!-- About -->
     <sys:String x:Key="Tray.About">关于</sys:String>

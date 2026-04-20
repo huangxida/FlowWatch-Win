@@ -1,10 +1,13 @@
-﻿using System;
+using System;
 using System.Diagnostics;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using FlowWatch.Helpers;
 using FlowWatch.Services;
 using FlowWatch.ViewModels;
@@ -13,12 +16,22 @@ namespace FlowWatch.Views
 {
     public partial class OverlayWindow : Window
     {
+        private static readonly TimeSpan TopmostSnapshotThrottle = TimeSpan.FromSeconds(2);
+
         private OverlayViewModel _vm;
         private bool _suppressSave;
         private DispatcherTimer _autoHideTimer;
         private DispatcherTimer _topmostWatchdogTimer;
         private bool _isAutoHideVisible = true;
         private readonly Stopwatch _startupStopwatch;
+        private HwndSource _hwndSource;
+        private HwndSourceHook _hwndHook;
+        private bool _systemEventsSubscribed;
+        private bool _topmostRecoveryScheduled;
+        private bool _isRecoveringTopmost;
+        private string _pendingTopmostRecoveryReason;
+        private string _lastTopmostSnapshotKey;
+        private DateTime _lastTopmostSnapshotAtUtc;
 
         public OverlayWindow()
         {
@@ -38,13 +51,26 @@ namespace FlowWatch.Views
             IsVisibleChanged += OnIsVisibleChanged;
         }
 
+        public void ReassertTopmostWithDiagnostics()
+        {
+            CaptureTopmostSnapshot("TrayManual-Requested", true);
+            RecoverTopmost("TrayManual");
+        }
+
         private void OnSourceInitialized(object sender, EventArgs e)
         {
             var hwnd = new WindowInteropHelper(this).Handle;
             if (hwnd != IntPtr.Zero)
             {
                 NativeInterop.SetToolWindow(hwnd);
-                EnsureTopmost("SourceInitialized");
+                _hwndSource = HwndSource.FromHwnd(hwnd);
+                if (_hwndSource != null)
+                {
+                    _hwndHook = OnWindowMessage;
+                    _hwndSource.AddHook(_hwndHook);
+                }
+                SubscribeSystemEvents();
+                RecoverTopmost("SourceInitialized");
             }
 
             var tier = RenderCapability.Tier >> 16;
@@ -56,7 +82,6 @@ namespace FlowWatch.Views
         {
             var loadedStartMs = _startupStopwatch.ElapsedMilliseconds;
 
-            // Restore saved position
             _suppressSave = true;
             var settings = SettingsService.Instance.Settings;
             if (settings.OverlayX.HasValue && settings.OverlayY.HasValue)
@@ -71,9 +96,8 @@ namespace FlowWatch.Views
 
             SettingsService.Instance.SettingsChanged += OnSettingsChanged;
 
-            // Re-apply after first render cycle to mitigate startup z-order races.
             Dispatcher.BeginInvoke(
-                new Action(() => EnsureTopmost("Loaded-BeginInvoke")),
+                new Action(() => RecoverTopmost("Loaded-BeginInvoke")),
                 DispatcherPriority.ApplicationIdle);
 
             LogService.Info(
@@ -83,14 +107,13 @@ namespace FlowWatch.Views
         private void OnContentRendered(object sender, EventArgs e)
         {
             LogService.Info($"OverlayWindow ContentRendered at {_startupStopwatch.ElapsedMilliseconds} ms");
-            LogTopmostState("ContentRendered");
+            CaptureTopmostSnapshot("ContentRendered", false);
         }
 
         private void OnLocationChanged(object sender, EventArgs e)
         {
             if (_suppressSave) return;
 
-            // Save position directly to settings without triggering SettingsChanged
             var settings = SettingsService.Instance.Settings;
             settings.OverlayX = Left;
             settings.OverlayY = Top;
@@ -123,8 +146,9 @@ namespace FlowWatch.Views
             NativeInterop.SetClickThrough(hwnd, settings.LockOnTop);
             if (settings.LockOnTop)
             {
-                EnsureTopmost("ApplyLockState");
+                Cursor = Cursors.Arrow;
                 StartTopmostWatchdog();
+                RecoverTopmost("ApplyLockState");
             }
             else
             {
@@ -135,10 +159,9 @@ namespace FlowWatch.Views
                     NativeInterop.HWND_NOTOPMOST,
                     0, 0, 0, 0,
                     NativeInterop.SWP_NOMOVE | NativeInterop.SWP_NOSIZE | NativeInterop.SWP_NOACTIVATE);
-                LogTopmostState("ApplyLockState-Unlock");
+                Cursor = Cursors.SizeAll;
+                CaptureTopmostSnapshot("ApplyLockState-Unlock", true);
             }
-
-            Cursor = settings.LockOnTop ? Cursors.Arrow : Cursors.SizeAll;
         }
 
         private void ApplyAutoHideState()
@@ -153,7 +176,6 @@ namespace FlowWatch.Views
                     _autoHideTimer.Tick += OnAutoHideTimerTick;
                 }
                 _autoHideTimer.Start();
-                // Check current state immediately
                 CheckMousePosition();
             }
             else
@@ -175,7 +197,6 @@ namespace FlowWatch.Views
             var screenPoint = new Point(pt.X, pt.Y);
             var wpfPoint = PointFromScreen(screenPoint);
 
-            // Add a small margin (8px) around the window for easier targeting
             bool isMouseOver = wpfPoint.X >= -8 && wpfPoint.Y >= -8 &&
                                wpfPoint.X <= ActualWidth + 8 && wpfPoint.Y <= ActualHeight + 8;
 
@@ -193,19 +214,19 @@ namespace FlowWatch.Views
 
         private void OnActivated(object sender, EventArgs e)
         {
-            EnsureTopmost("Activated");
+            ObserveAndScheduleRecovery("Activated");
         }
 
         private void OnDeactivated(object sender, EventArgs e)
         {
-            EnsureTopmost("Deactivated");
+            ObserveAndScheduleRecovery("Deactivated");
         }
 
         private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (IsVisible)
             {
-                EnsureTopmost("IsVisibleChanged-Visible");
+                ObserveAndScheduleRecovery("IsVisibleChanged-Visible");
             }
         }
 
@@ -213,7 +234,7 @@ namespace FlowWatch.Views
         {
             if (_topmostWatchdogTimer == null)
             {
-                _topmostWatchdogTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                _topmostWatchdogTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
                 _topmostWatchdogTimer.Tick += OnTopmostWatchdogTick;
             }
             _topmostWatchdogTimer.Start();
@@ -226,8 +247,7 @@ namespace FlowWatch.Views
 
         private void OnTopmostWatchdogTick(object sender, EventArgs e)
         {
-            var settings = SettingsService.Instance.Settings;
-            if (!settings.LockOnTop) return;
+            if (!ShouldMonitorTopmost()) return;
 
             var hwnd = new WindowInteropHelper(this).Handle;
             if (hwnd == IntPtr.Zero) return;
@@ -236,48 +256,309 @@ namespace FlowWatch.Views
             if (!Topmost || !isTopMost)
             {
                 LogService.Warn(
-                    $"Overlay topmost dropped, recovering. reason=Watchdog, WpfTopmost={Topmost}, Win32Topmost={isTopMost}");
-                EnsureTopmost("Watchdog-Recover");
+                    $"Overlay topmost dropped, recovering. reason=Watchdog-Mismatch, WpfTopmost={Topmost}, Win32Topmost={isTopMost}");
+                CaptureTopmostSnapshot("Watchdog-Mismatch", true);
+                RecoverTopmost("Watchdog-Mismatch");
             }
         }
 
-        private void EnsureTopmost(string reason)
+        private void ObserveAndScheduleRecovery(string reason)
         {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => ObserveAndScheduleRecovery(reason)), DispatcherPriority.Background);
+                return;
+            }
+
+            if (!ShouldMonitorTopmost()) return;
+
+            CaptureTopmostSnapshot(reason, false);
+            ScheduleTopmostRecovery(reason);
+        }
+
+        private void ScheduleTopmostRecovery(string reason)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => ScheduleTopmostRecovery(reason)), DispatcherPriority.Background);
+                return;
+            }
+
+            if (!ShouldMonitorTopmost()) return;
+
+            _pendingTopmostRecoveryReason = reason;
+            if (_topmostRecoveryScheduled) return;
+
+            _topmostRecoveryScheduled = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _topmostRecoveryScheduled = false;
+                var scheduledReason = _pendingTopmostRecoveryReason ?? reason;
+                _pendingTopmostRecoveryReason = null;
+
+                if (!ShouldMonitorTopmost()) return;
+                RecoverTopmost(scheduledReason);
+            }), DispatcherPriority.ApplicationIdle);
+        }
+
+        private void RecoverTopmost(string reason)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => RecoverTopmost(reason)), DispatcherPriority.Send);
+                return;
+            }
+
             var settings = SettingsService.Instance.Settings;
             var hwnd = new WindowInteropHelper(this).Handle;
             if (hwnd == IntPtr.Zero) return;
 
             if (!settings.LockOnTop)
             {
-                LogTopmostState($"{reason}-Skip(LockOff)");
+                CaptureTopmostSnapshot($"{reason}-Skip(LockOff)", false);
                 return;
             }
 
-            Topmost = false;
-            Topmost = true;
-            NativeInterop.SetWindowPos(
-                hwnd,
-                NativeInterop.HWND_TOPMOST,
-                0, 0, 0, 0,
-                NativeInterop.SWP_NOMOVE | NativeInterop.SWP_NOSIZE | NativeInterop.SWP_NOACTIVATE);
+            if (_isRecoveringTopmost) return;
 
-            LogTopmostState(reason);
+            _isRecoveringTopmost = true;
+            try
+            {
+                CaptureTopmostSnapshot($"{reason}-BeforeRecover", true);
+
+                NativeInterop.ShowWindow(hwnd, NativeInterop.SW_SHOWNA);
+
+                var notTopmostOk = NativeInterop.SetWindowPos(
+                    hwnd,
+                    NativeInterop.HWND_NOTOPMOST,
+                    0, 0, 0, 0,
+                    NativeInterop.SWP_NOMOVE | NativeInterop.SWP_NOSIZE | NativeInterop.SWP_NOACTIVATE);
+                var notTopmostError = notTopmostOk ? 0 : Marshal.GetLastWin32Error();
+
+                var topmostOk = NativeInterop.SetWindowPos(
+                    hwnd,
+                    NativeInterop.HWND_TOPMOST,
+                    0, 0, 0, 0,
+                    NativeInterop.SWP_NOMOVE | NativeInterop.SWP_NOSIZE | NativeInterop.SWP_NOACTIVATE | NativeInterop.SWP_SHOWWINDOW);
+                var topmostError = topmostOk ? 0 : Marshal.GetLastWin32Error();
+
+                Topmost = true;
+
+                if (!notTopmostOk || !topmostOk)
+                {
+                    LogService.Warn(
+                        $"RecoverTopmost encountered Win32 failure. reason={reason}, notTopmostOk={notTopmostOk}, notTopmostError={notTopmostError}, topmostOk={topmostOk}, topmostError={topmostError}");
+                }
+
+                CaptureTopmostSnapshot($"{reason}-AfterRecover", true);
+            }
+            finally
+            {
+                _isRecoveringTopmost = false;
+            }
         }
 
-        private void LogTopmostState(string reason)
+        private void CaptureTopmostSnapshot(string reason, bool force)
         {
-            var hwnd = new WindowInteropHelper(this).Handle;
-            if (hwnd == IntPtr.Zero)
+            if (!Dispatcher.CheckAccess())
             {
-                LogService.Info($"OverlayTopmost reason={reason}, hwnd=0");
+                Dispatcher.BeginInvoke(new Action(() => CaptureTopmostSnapshot(reason, force)), DispatcherPriority.Background);
                 return;
             }
 
+            var hwnd = new WindowInteropHelper(this).Handle;
             var exStyle = NativeInterop.GetExStyle(hwnd);
-            var isTopMost = (exStyle & NativeInterop.WS_EX_TOPMOST) != 0;
+            var win32Topmost = (exStyle & NativeInterop.WS_EX_TOPMOST) != 0;
+            var foregroundHwnd = NativeInterop.GetForegroundWindow();
+            var prevHwnd = hwnd == IntPtr.Zero ? IntPtr.Zero : NativeInterop.GetWindow(hwnd, NativeInterop.GW_HWNDPREV);
+            var nextHwnd = hwnd == IntPtr.Zero ? IntPtr.Zero : NativeInterop.GetWindow(hwnd, NativeInterop.GW_HWNDNEXT);
+
+            var key = string.Join("|",
+                reason,
+                FormatHwnd(hwnd),
+                exStyle.ToString("X", CultureInfo.InvariantCulture),
+                FormatHwnd(foregroundHwnd),
+                FormatHwnd(prevHwnd),
+                FormatHwnd(nextHwnd));
+            var now = DateTime.UtcNow;
+            if (!force &&
+                string.Equals(key, _lastTopmostSnapshotKey, StringComparison.Ordinal) &&
+                now - _lastTopmostSnapshotAtUtc < TopmostSnapshotThrottle)
+            {
+                return;
+            }
+
+            _lastTopmostSnapshotKey = key;
+            _lastTopmostSnapshotAtUtc = now;
+
+            var settings = SettingsService.Instance.Settings;
             LogService.Info(
-                $"OverlayTopmost reason={reason}, lock={SettingsService.Instance.Settings.LockOnTop}, " +
-                $"wpfTopmost={Topmost}, hwnd=0x{hwnd.ToInt64():X}, exStyle=0x{exStyle:X}, win32Topmost={isTopMost}");
+                $"OverlayTopmostSnapshot reason={reason}, lock={settings.LockOnTop}, visible={IsVisible}, opacity={FormatDouble(Opacity)}, " +
+                $"wpfTopmost={Topmost}, hwnd={FormatHwnd(hwnd)}, exStyle=0x{exStyle:X}, win32Topmost={win32Topmost}, " +
+                $"bounds=({FormatDouble(Left)},{FormatDouble(Top)},{FormatDouble(ActualWidth)}x{FormatDouble(ActualHeight)}), " +
+                $"foreground={DescribeWindow(foregroundHwnd, true)}, prev={DescribeWindow(prevHwnd, false)}, next={DescribeWindow(nextHwnd, false)}");
+        }
+
+        private IntPtr OnWindowMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (_isRecoveringTopmost) return IntPtr.Zero;
+
+            switch ((uint)msg)
+            {
+                case NativeInterop.WM_WINDOWPOSCHANGING:
+                case NativeInterop.WM_WINDOWPOSCHANGED:
+                    if (!ShouldMonitorTopmost() || lParam == IntPtr.Zero) break;
+
+                    WINDOWPOS windowPos;
+                    try
+                    {
+                        windowPos = Marshal.PtrToStructure<WINDOWPOS>(lParam);
+                    }
+                    catch
+                    {
+                        break;
+                    }
+
+                    if (!IsSuspiciousWindowPos(windowPos)) break;
+
+                    var reason = string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0} flags=0x{1:X} insertAfter={2}",
+                        (uint)msg == NativeInterop.WM_WINDOWPOSCHANGING ? "WM_WINDOWPOSCHANGING" : "WM_WINDOWPOSCHANGED",
+                        windowPos.flags,
+                        FormatInsertAfter(windowPos.hwndInsertAfter));
+                    CaptureTopmostSnapshot(reason, false);
+                    ScheduleTopmostRecovery(reason);
+                    break;
+
+                case NativeInterop.WM_DISPLAYCHANGE:
+                    ObserveAndScheduleRecovery("WM_DISPLAYCHANGE");
+                    break;
+            }
+
+            return IntPtr.Zero;
+        }
+
+        private void SubscribeSystemEvents()
+        {
+            if (_systemEventsSubscribed) return;
+
+            SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+            SystemEvents.PowerModeChanged += OnPowerModeChanged;
+            SystemEvents.SessionSwitch += OnSessionSwitch;
+            _systemEventsSubscribed = true;
+        }
+
+        private void UnsubscribeSystemEvents()
+        {
+            if (!_systemEventsSubscribed) return;
+
+            SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+            SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+            SystemEvents.SessionSwitch -= OnSessionSwitch;
+            _systemEventsSubscribed = false;
+        }
+
+        private void OnDisplaySettingsChanged(object sender, EventArgs e)
+        {
+            ObserveAndScheduleRecovery("DisplaySettingsChanged");
+        }
+
+        private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            ObserveAndScheduleRecovery($"PowerModeChanged:{e.Mode}");
+        }
+
+        private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
+        {
+            ObserveAndScheduleRecovery($"SessionSwitch:{e.Reason}");
+        }
+
+        private bool ShouldMonitorTopmost()
+        {
+            return SettingsService.Instance.Settings.LockOnTop && IsVisible;
+        }
+
+        private static bool IsSuspiciousWindowPos(WINDOWPOS windowPos)
+        {
+            var isZOrderChange = (windowPos.flags & NativeInterop.SWP_NOZORDER) == 0;
+            if (!isZOrderChange) return false;
+
+            return windowPos.hwndInsertAfter != NativeInterop.HWND_TOPMOST;
+        }
+
+        private string DescribeWindow(IntPtr hwnd, bool includeProcess)
+        {
+            if (hwnd == IntPtr.Zero) return "0x0";
+
+            var title = SanitizeForLog(NativeInterop.GetWindowTextString(hwnd));
+            var className = SanitizeForLog(NativeInterop.GetClassNameString(hwnd));
+            if (!includeProcess)
+            {
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} title=\"{1}\" class=\"{2}\"",
+                    FormatHwnd(hwnd),
+                    title,
+                    className);
+            }
+
+            var processId = NativeInterop.GetProcessId(hwnd);
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} title=\"{1}\" class=\"{2}\" pid={3} process=\"{4}\"",
+                FormatHwnd(hwnd),
+                title,
+                className,
+                processId,
+                SanitizeForLog(GetProcessName(processId)));
+        }
+
+        private static string GetProcessName(uint processId)
+        {
+            if (processId == 0) return string.Empty;
+
+            try
+            {
+                return Process.GetProcessById((int)processId).ProcessName;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string SanitizeForLog(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+            var sanitized = value.Replace("\r", " ").Replace("\n", " ").Replace("\"", "'");
+            sanitized = sanitized.Trim();
+            if (sanitized.Length > 120)
+            {
+                sanitized = sanitized.Substring(0, 117) + "...";
+            }
+
+            return sanitized;
+        }
+
+        private static string FormatHwnd(IntPtr hwnd)
+        {
+            return hwnd == IntPtr.Zero
+                ? "0x0"
+                : string.Format(CultureInfo.InvariantCulture, "0x{0:X}", hwnd.ToInt64());
+        }
+
+        private static string FormatInsertAfter(IntPtr hwnd)
+        {
+            if (hwnd == NativeInterop.HWND_TOPMOST) return "HWND_TOPMOST";
+            if (hwnd == NativeInterop.HWND_NOTOPMOST) return "HWND_NOTOPMOST";
+            return FormatHwnd(hwnd);
+        }
+
+        private static string FormatDouble(double value)
+        {
+            return value.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
         public void Cleanup()
@@ -285,6 +566,13 @@ namespace FlowWatch.Views
             _autoHideTimer?.Stop();
             _topmostWatchdogTimer?.Stop();
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
+            UnsubscribeSystemEvents();
+            if (_hwndSource != null && _hwndHook != null)
+            {
+                _hwndSource.RemoveHook(_hwndHook);
+                _hwndHook = null;
+                _hwndSource = null;
+            }
             _vm?.Cleanup();
         }
     }
