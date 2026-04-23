@@ -11,6 +11,18 @@ namespace FlowWatch.Helpers
         public int Y;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WINDOWPOS
+    {
+        public IntPtr hwnd;
+        public IntPtr hwndInsertAfter;
+        public int x;
+        public int y;
+        public int cx;
+        public int cy;
+        public uint flags;
+    }
+
     public static class NativeInterop
     {
         public const int GWL_EXSTYLE = -20;
@@ -28,9 +40,15 @@ namespace FlowWatch.Helpers
         public const uint SWP_NOZORDER = 0x0004;
         public const uint SWP_NOACTIVATE = 0x0010;
         public const uint SWP_FRAMECHANGED = 0x0020;
+        public const uint SWP_SHOWWINDOW = 0x0040;
 
         public const int SW_SHOW = 5;
         public const int SW_SHOWNA = 8;
+        public const uint WM_WINDOWPOSCHANGING = 0x0046;
+        public const uint WM_WINDOWPOSCHANGED = 0x0047;
+        public const uint WM_DISPLAYCHANGE = 0x007E;
+        public const uint GW_HWNDNEXT = 2;
+        public const uint GW_HWNDPREV = 3;
 
         public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
@@ -65,10 +83,22 @@ namespace FlowWatch.Helpers
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
         public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
@@ -82,6 +112,20 @@ namespace FlowWatch.Helpers
             var sb = new StringBuilder(256);
             GetClassName(hWnd, sb, sb.Capacity);
             return sb.ToString();
+        }
+
+        public static string GetWindowTextString(IntPtr hWnd)
+        {
+            var sb = new StringBuilder(512);
+            GetWindowText(hWnd, sb, sb.Capacity);
+            return sb.ToString();
+        }
+
+        public static uint GetProcessId(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero) return 0;
+            GetWindowThreadProcessId(hWnd, out var processId);
+            return processId;
         }
 
         public static void SetClickThrough(IntPtr hwnd, bool enabled)

@@ -221,6 +221,9 @@ namespace FlowWatch
                 });
             };
 
+            var reassertTopmostItem = new MenuItem { Header = loc.Get("Tray.ReassertTopmost") };
+            reassertTopmostItem.Click += (s, ev) => ReassertOverlayTopmost();
+
             var checkUpdateItem = new MenuItem { Header = loc.Get("Tray.CheckUpdate") };
             checkUpdateItem.Click += async (s, ev) => await ManualCheckForUpdate();
 
@@ -237,6 +240,7 @@ namespace FlowWatch
             contextMenu.Items.Add(appTrafficItem);
             contextMenu.Items.Add(_autoHideItem);
             contextMenu.Items.Add(_lockItem);
+            contextMenu.Items.Add(reassertTopmostItem);
             contextMenu.Items.Add(checkUpdateItem);
             contextMenu.Items.Add(aboutItem);
             contextMenu.Items.Add(separator);
@@ -272,6 +276,11 @@ namespace FlowWatch
             if (_settingsWindow == null)
                 _settingsWindow = new SettingsWindow();
             _settingsWindow.Show();
+        }
+
+        private void ReassertOverlayTopmost()
+        {
+            _overlayWindow?.ReassertTopmostWithDiagnostics();
         }
 
         private void ShowStatistics()

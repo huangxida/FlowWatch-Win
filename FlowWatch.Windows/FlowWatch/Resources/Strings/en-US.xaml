@@ -9,6 +9,7 @@
     <sys:String x:Key="Tray.AppTraffic">App Traffic</sys:String>
     <sys:String x:Key="Tray.AutoHide">Auto Hide</sys:String>
     <sys:String x:Key="Tray.LockOnTop">Lock on Top</sys:String>
+    <sys:String x:Key="Tray.ReassertTopmost">Reassert Topmost + Diagnostics</sys:String>
     <sys:String x:Key="Tray.Exit">Exit</sys:String>
 
     <!-- Common Messages -->
