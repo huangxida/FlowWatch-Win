@@ -1,4 +1,8 @@
-# FlowWatch
+<p align="center">
+  <img src="assets/icon.png" alt="FlowWatch" width="96" height="96">
+</p>
+
+<h1 align="center">FlowWatch</h1>
 
 A lightweight, transparent overlay network speed monitor for Windows. Displays real-time upload/download speeds on your desktop with per-app traffic tracking and historical statistics.
 
@@ -12,25 +16,14 @@ Built with C# WPF (.NET Framework 4.8), ~5 MB binary, <50 MB memory usage.
 
 <table>
 <tr>
-<td align="center"><b>Settings — General</b></td>
-<td align="center"><b>Settings — Appearance</b></td>
-</tr>
-<tr>
-<td><img src="assets/screenshots/settings-general-en.png" width="320"/></td>
-<td><img src="assets/screenshots/settings-appearance-en.png" width="320"/></td>
-</tr>
-</table>
-
-<table>
-<tr>
+<td align="center"><b>Settings</b></td>
 <td align="center"><b>Traffic Statistics</b></td>
-<td align="center"><b>App Traffic (Realtime)</b></td>
-<td align="center"><b>App Traffic (Daily)</b></td>
+<td align="center"><b>App Traffic</b></td>
 </tr>
 <tr>
-<td><img src="assets/screenshots/statistics-en.png" width="280"/></td>
-<td><img src="assets/screenshots/app-traffic-realtime-en.png" width="280"/></td>
-<td><img src="assets/screenshots/app-traffic-daily-en.png" width="280"/></td>
+<td><img src="assets/screenshots/settings-general-en.png" width="300"/></td>
+<td><img src="assets/screenshots/statistics-en.png" width="300"/></td>
+<td><img src="assets/screenshots/app-traffic-daily-en.png" width="260"/></td>
 </tr>
 </table>
 

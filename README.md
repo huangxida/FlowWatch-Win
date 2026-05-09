@@ -1,4 +1,8 @@
-# FlowWatch
+<p align="center">
+  <img src="assets/icon.png" alt="FlowWatch" width="96" height="96">
+</p>
+
+<h1 align="center">FlowWatch</h1>
 
 轻量级透明悬浮网速监控工具，支持按应用流量监控和历史流量统计。
 
@@ -12,25 +16,14 @@
 
 <table>
 <tr>
-<td align="center"><b>设置 — 常规</b></td>
-<td align="center"><b>设置 — 外观</b></td>
-</tr>
-<tr>
-<td><img src="assets/screenshots/settings-general-zh.png" width="320"/></td>
-<td><img src="assets/screenshots/settings-appearance-zh.png" width="320"/></td>
-</tr>
-</table>
-
-<table>
-<tr>
+<td align="center"><b>设置</b></td>
 <td align="center"><b>流量统计</b></td>
-<td align="center"><b>应用流量（实时）</b></td>
-<td align="center"><b>应用流量（按日）</b></td>
+<td align="center"><b>应用流量</b></td>
 </tr>
 <tr>
-<td><img src="assets/screenshots/statistics-zh.png" width="280"/></td>
-<td><img src="assets/screenshots/app-traffic-realtime-zh.png" width="280"/></td>
-<td><img src="assets/screenshots/app-traffic-daily-zh.png" width="280"/></td>
+<td><img src="assets/screenshots/settings-general-zh.png" width="300"/></td>
+<td><img src="assets/screenshots/statistics-zh.png" width="300"/></td>
+<td><img src="assets/screenshots/app-traffic-daily-zh.png" width="260"/></td>
 </tr>
 </table>
 

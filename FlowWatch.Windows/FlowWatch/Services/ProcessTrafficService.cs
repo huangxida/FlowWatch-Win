@@ -203,8 +203,41 @@ namespace FlowWatch.Services
         public string GetExePath(string processName)
         {
             if (string.IsNullOrEmpty(processName)) return null;
-            _exePathCache.TryGetValue(processName, out var path);
-            return path;
+            if (_exePathCache.TryGetValue(processName, out var path) &&
+                !string.IsNullOrEmpty(path) &&
+                File.Exists(path))
+            {
+                return path;
+            }
+
+            try
+            {
+                foreach (var proc in Process.GetProcessesByName(processName))
+                {
+                    using (proc)
+                    {
+                        try
+                        {
+                            var exePath = proc.MainModule?.FileName;
+                            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                            {
+                                _exePathCache[processName] = exePath;
+                                return exePath;
+                            }
+                        }
+                        catch
+                        {
+                            // Some system/elevated processes deny MainModule access.
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Fall back to a generated app mark in the UI.
+            }
+
+            return null;
         }
 
         private void Accumulate(int pid, int size, bool isDownload)
