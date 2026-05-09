@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:FlowWatch.ViewModels"
         Title="{DynamicResource Stats.WindowTitle}"
-        Width="480" Height="540"
-        ResizeMode="NoResize"
+        Width="900" Height="640"
+        MinWidth="780" MinHeight="560"
+        ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource SettingsWindowStyle}"
         ShowInTaskbar="True">
@@ -12,137 +13,343 @@
         <vm:StatisticsViewModel/>
     </Window.DataContext>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="32,28,32,28">
-
-            <!-- Header -->
-            <TextBlock Text="{DynamicResource Stats.Header}" FontSize="20" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,20"/>
-
-            <!-- Range Tabs -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                <RadioButton Content="{DynamicResource Stats.Day}" GroupName="Range"
-                             IsChecked="{Binding IsDaySelected, Mode=OneWay}"
-                             Command="{Binding DayCommand}"
-                             Style="{StaticResource RangeTabStyle}" Margin="0,0,8,0"/>
-                <RadioButton Content="{DynamicResource Stats.Week}" GroupName="Range"
-                             IsChecked="{Binding IsWeekSelected, Mode=OneWay}"
-                             Command="{Binding WeekCommand}"
-                             Style="{StaticResource RangeTabStyle}" Margin="0,0,8,0"/>
-                <RadioButton Content="{DynamicResource Stats.Month}" GroupName="Range"
-                             IsChecked="{Binding IsMonthSelected, Mode=OneWay}"
-                             Command="{Binding MonthCommand}"
-                             Style="{StaticResource RangeTabStyle}"/>
+    <TabControl Style="{StaticResource SidebarTabControlStyle}"
+                ItemContainerStyle="{StaticResource SidebarTabItemStyle}">
+        <TabControl.Tag>
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Stats.Header}" FontSize="15"
+                           FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                <TextBlock Text="{DynamicResource Stats.SidebarSubtitle}" FontSize="11.5"
+                           Foreground="{StaticResource HintBrush}" Margin="0,3,0,0"
+                           TextWrapping="Wrap"/>
             </StackPanel>
+        </TabControl.Tag>
 
-            <!-- Period Label -->
-            <TextBlock Text="{Binding PeriodLabel}" FontSize="13"
-                       Foreground="{StaticResource HintBrush}" Margin="0,0,0,16"/>
-
-            <!-- Summary Card -->
-            <TextBlock Text="{DynamicResource Stats.Summary}" FontSize="11.5" FontWeight="Medium"
-                       Foreground="{StaticResource HintBrush}" Margin="0,0,0,10"/>
-
-            <Border Background="{StaticResource CardBackgroundBrush}"
-                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="16,12" Margin="0,0,0,20">
+        <TabItem Header="{DynamicResource Stats.Overview}">
+            <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Visible"
+                          Margin="0,0,-18,0">
                 <StackPanel>
-                    <DockPanel Margin="0,2,0,2">
-                        <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <Run Text="&#x2193;" Foreground="#FF4CAF50" FontWeight="Bold"/>
-                            <Run Text="{DynamicResource Stats.TotalDownload}" Foreground="{StaticResource TextBrush}"/>
-                        </TextBlock>
-                        <TextBlock Text="{Binding TotalDownloadFormatted}"
-                                   Style="{StaticResource ValueStyle}"
-                                   DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"/>
-                    </DockPanel>
-                    <Border Style="{StaticResource DividerStyle}"/>
-                    <DockPanel Margin="0,2,0,2">
-                        <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <Run Text="&#x2191;" Foreground="#FFFF9800" FontWeight="Bold"/>
-                            <Run Text="{DynamicResource Stats.TotalUpload}" Foreground="{StaticResource TextBrush}"/>
-                        </TextBlock>
-                        <TextBlock Text="{Binding TotalUploadFormatted}"
-                                   Style="{StaticResource ValueStyle}"
-                                   DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"/>
-                    </DockPanel>
-                </StackPanel>
-            </Border>
+                    <Grid Margin="0,0,0,18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{DynamicResource Stats.Overview}" Style="{StaticResource WindowTitleStyle}"/>
+                            <TextBlock Text="{DynamicResource Stats.OverviewSubtitle}" Style="{StaticResource WindowSubtitleStyle}"
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding PeriodLabel}" Style="{StaticResource ValueStyle}"
+                                   VerticalAlignment="Top" Margin="18,6,0,0"/>
+                    </Grid>
 
-            <!-- Daily Detail Card -->
-            <TextBlock Text="{DynamicResource Stats.DailyDetail}" FontSize="11.5" FontWeight="Medium"
-                       Foreground="{StaticResource HintBrush}" Margin="0,0,0,10"/>
-
-            <Border Background="{StaticResource CardBackgroundBrush}"
-                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="16,8">
-                <ItemsControl ItemsSource="{Binding DailyRecords}" MaxHeight="260">
-                    <ItemsControl.Template>
-                        <ControlTemplate TargetType="ItemsControl">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                          MaxHeight="260">
-                                <ItemsPresenter/>
-                            </ScrollViewer>
-                        </ControlTemplate>
-                    </ItemsControl.Template>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Margin="0,6,0,6">
-                                <!-- Date -->
-                                <TextBlock Text="{Binding Date}" FontSize="12" FontWeight="Medium"
-                                           Foreground="{StaticResource TextBrush}" Margin="0,0,0,4"/>
-                                <!-- Download bar -->
-                                <DockPanel Margin="0,1,0,1">
-                                    <TextBlock Text="&#x2193;" Foreground="#FF4CAF50" FontWeight="Bold"
-                                               Width="16" VerticalAlignment="Center" FontSize="11"/>
-                                    <TextBlock Text="{Binding DownloadFormatted}"
-                                               DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                               Foreground="{StaticResource AccentBrush}"
-                                               FontSize="11.5" FontFamily="Consolas, Segoe UI"
-                                               VerticalAlignment="Center" MinWidth="70" TextAlignment="Right"/>
-                                    <Grid Margin="4,0,8,0" Height="10" VerticalAlignment="Center">
-                                        <Border Background="#FFEEEEEE" CornerRadius="3"/>
-                                        <Border Background="#FF4CAF50" CornerRadius="3"
-                                                HorizontalAlignment="Left">
-                                            <Border.Width>
-                                                <MultiBinding Converter="{StaticResource RatioToWidthConverter}">
-                                                    <Binding Path="DownloadRatio"/>
-                                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}"/>
-                                                </MultiBinding>
-                                            </Border.Width>
-                                        </Border>
-                                    </Grid>
-                                </DockPanel>
-                                <!-- Upload bar -->
-                                <DockPanel Margin="0,1,0,1">
-                                    <TextBlock Text="&#x2191;" Foreground="#FFFF9800" FontWeight="Bold"
-                                               Width="16" VerticalAlignment="Center" FontSize="11"/>
-                                    <TextBlock Text="{Binding UploadFormatted}"
-                                               DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                               Foreground="{StaticResource AccentBrush}"
-                                               FontSize="11.5" FontFamily="Consolas, Segoe UI"
-                                               VerticalAlignment="Center" MinWidth="70" TextAlignment="Right"/>
-                                    <Grid Margin="4,0,8,0" Height="10" VerticalAlignment="Center">
-                                        <Border Background="#FFEEEEEE" CornerRadius="3"/>
-                                        <Border Background="#FFFF9800" CornerRadius="3"
-                                                HorizontalAlignment="Left">
-                                            <Border.Width>
-                                                <MultiBinding Converter="{StaticResource RatioToWidthConverter}">
-                                                    <Binding Path="UploadRatio"/>
-                                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}"/>
-                                                </MultiBinding>
-                                            </Border.Width>
-                                        </Border>
-                                    </Grid>
-                                </DockPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource CardBorderBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="3">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="{DynamicResource Stats.Day}" GroupName="Range"
+                                             IsChecked="{Binding IsDaySelected, Mode=OneWay}"
+                                             Command="{Binding DayCommand}"
+                                             Style="{StaticResource RangeTabStyle}"/>
+                                <RadioButton Content="{DynamicResource Stats.Week}" GroupName="Range"
+                                             IsChecked="{Binding IsWeekSelected, Mode=OneWay}"
+                                             Command="{Binding WeekCommand}"
+                                             Style="{StaticResource RangeTabStyle}"/>
+                                <RadioButton Content="{DynamicResource Stats.Month}" GroupName="Range"
+                                             IsChecked="{Binding IsMonthSelected, Mode=OneWay}"
+                                             Command="{Binding MonthCommand}"
+                                             Style="{StaticResource RangeTabStyle}"/>
                             </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </Border>
+                        </Border>
+                    </StackPanel>
 
-        </StackPanel>
-    </ScrollViewer>
+                    <Border Style="{StaticResource SoftPanelStyle}" Visibility="{Binding EmptyVisibility}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Stats.NoData}" Style="{StaticResource SectionTitleStyle}"/>
+                            <TextBlock Text="{DynamicResource Stats.NoDataHint}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <UniformGrid Columns="3" Margin="0,0,0,16">
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.TotalDownload}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding AllTimeDownloadFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{DynamicResource Stats.AllHistory}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.TotalUpload}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding AllTimeUploadFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource OrangeBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{DynamicResource Stats.AllHistory}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.TotalTraffic}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding TotalTrafficFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource PurpleBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{DynamicResource Stats.AllHistory}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.TodayTraffic}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding TodayTrafficFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{DynamicResource Stats.PeriodToday}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.YesterdayTraffic}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding YesterdayTrafficFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource GreenBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{DynamicResource Stats.DayOverDay}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.ActiveDays}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding ActiveDaysFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource GreenBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{Binding ActiveRateFormatted}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.RecordDays}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding RecordDaysFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource TextBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{DynamicResource Stats.AllHistory}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.Last7Total}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding Last7TotalFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{Binding Last7AverageFormatted}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.Summary}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding RangeTotalFormatted}" Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource PurpleBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{Binding PeriodLabel}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <Border Style="{StaticResource ModernCardStyle}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource Stats.DailyDetail}" Style="{StaticResource TableHeaderStyle}"/>
+                                <TextBlock Grid.Column="1" Text="{DynamicResource Stats.TotalDownload}" Style="{StaticResource TableHeaderStyle}" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Text="{DynamicResource Stats.TotalUpload}" Style="{StaticResource TableHeaderStyle}" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="{DynamicResource Stats.TotalTraffic}" Style="{StaticResource TableHeaderStyle}" TextAlignment="Right"/>
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding DailyRecords}" Visibility="{Binding RecordsVisibility}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource TableRowStyle}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="96"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="120"/>
+                                                    <ColumnDefinition Width="120"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Date}" Style="{StaticResource TableCellTextStyle}"
+                                                           FontWeight="SemiBold"/>
+                                                <Grid Grid.Column="1" Height="8" Margin="0,0,16,0" VerticalAlignment="Center">
+                                                    <Border Background="#FFE8EEF6" CornerRadius="4"/>
+                                                    <Border Background="{StaticResource AccentBrush}" CornerRadius="4"
+                                                            HorizontalAlignment="Left">
+                                                        <Border.Width>
+                                                            <MultiBinding Converter="{StaticResource RatioToWidthConverter}">
+                                                                <Binding Path="TotalRatio"/>
+                                                                <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}"/>
+                                                            </MultiBinding>
+                                                        </Border.Width>
+                                                    </Border>
+                                                </Grid>
+                                                <TextBlock Grid.Column="2" Text="{Binding DownloadFormatted}"
+                                                           Style="{StaticResource MonoCellTextStyle}"
+                                                           Foreground="{StaticResource AccentBrush}"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding UploadFormatted}"
+                                                           Style="{StaticResource MonoCellTextStyle}"
+                                                           Foreground="{StaticResource OrangeBrush}"/>
+                                                <TextBlock Grid.Column="4" Text="{Binding TotalFormatted}"
+                                                           Style="{StaticResource MonoCellTextStyle}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="{DynamicResource Stats.Trends}">
+            <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Visible"
+                          Margin="0,0,-18,0">
+                <StackPanel>
+                    <TextBlock Text="{DynamicResource Stats.Trends}" Style="{StaticResource WindowTitleStyle}"/>
+                    <TextBlock Text="{DynamicResource Stats.TrendsSubtitle}" Style="{StaticResource WindowSubtitleStyle}"
+                               Margin="0,4,0,20"/>
+
+                    <Border Style="{StaticResource ModernCardStyle}">
+                        <UniformGrid Columns="2">
+                            <Border Style="{StaticResource SoftPanelStyle}" Margin="0,0,10,10">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Stats.Last7Total}" Style="{StaticResource MetricTitleStyle}"/>
+                                    <TextBlock Text="{Binding Last7TotalFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SoftPanelStyle}" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Stats.Last7Average}" Style="{StaticResource MetricTitleStyle}"/>
+                                    <TextBlock Text="{Binding Last7AverageFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource PurpleBrush}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SoftPanelStyle}" Margin="0,0,10,10">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Stats.Last30Total}" Style="{StaticResource MetricTitleStyle}"/>
+                                    <TextBlock Text="{Binding Last30TotalFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SoftPanelStyle}" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Stats.Last30Average}" Style="{StaticResource MetricTitleStyle}"/>
+                                    <TextBlock Text="{Binding Last30AverageFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource PurpleBrush}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SoftPanelStyle}" Margin="0,0,10,10">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Stats.HistoryAverage}" Style="{StaticResource MetricTitleStyle}"/>
+                                    <TextBlock Text="{Binding HistoryAverageFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource GreenBrush}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SoftPanelStyle}" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Stats.ActiveDayAverage}" Style="{StaticResource MetricTitleStyle}"/>
+                                    <TextBlock Text="{Binding ActiveDayAverageFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource GreenBrush}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SoftPanelStyle}" Margin="0,0,10,0">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Stats.DayOverDay}" Style="{StaticResource MetricTitleStyle}"/>
+                                    <TextBlock Text="{Binding DayOverDayFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource OrangeBrush}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SoftPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Stats.AllTimePeak}" Style="{StaticResource MetricTitleStyle}"/>
+                                    <TextBlock Text="{Binding AllTimePeakFormatted}" Style="{StaticResource MetricValueStyle}" FontSize="16" Foreground="{StaticResource PinkBrush}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="{DynamicResource Stats.Fun}">
+            <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Visible"
+                          Margin="0,0,-18,0">
+                <StackPanel>
+                    <TextBlock Text="{DynamicResource Stats.Fun}" Style="{StaticResource WindowTitleStyle}"/>
+                    <TextBlock Text="{DynamicResource Stats.FunSubtitle}" Style="{StaticResource WindowSubtitleStyle}"
+                               Margin="0,4,0,20"/>
+
+                    <Border Style="{StaticResource SoftPanelStyle}" Margin="0,0,0,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding PersonaTitle}" FontSize="20" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}"/>
+                                <TextBlock Text="{Binding PersonaSubtitle}" Style="{StaticResource HintStyle}" Margin="0,5,0,0"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding RecordDaysFormatted}" Style="{StaticResource ValueStyle}"
+                                       VerticalAlignment="Center" Margin="18,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <UniformGrid Columns="3">
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.UploadDownloadRatio}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding UploadDownloadRatioFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource PurpleBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.DownloadShare}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding DownloadShareFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.UploadShare}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding UploadShareFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource OrangeBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.CurrentStreak}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding CurrentStreakFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource GreenBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.LongestStreak}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding LongestStreakFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource GreenBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.QuietDays}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding QuietDaysFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource HintBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.Last7Peak}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding Last7PeakFormatted}" Style="{StaticResource MetricValueStyle}" FontSize="16" Foreground="{StaticResource OrangeBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.RecentActiveDate}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding RecentActiveDateFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource MetricCardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats.ActiveRate}" Style="{StaticResource MetricTitleStyle}"/>
+                                <TextBlock Text="{Binding ActiveRateFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource GreenBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+    </TabControl>
 </Window>
