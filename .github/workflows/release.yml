@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Extract version
         id: version
@@ -25,10 +25,10 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v1.3
 
       - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1.1.1
+        uses: NuGet/setup-nuget@v3.1.0
 
       - name: Patch AssemblyInfo version
         shell: pwsh
@@ -52,7 +52,7 @@ jobs:
         run: .\build.ps1 -Version ${{ steps.version.outputs.VERSION }} -SkipBuild
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: FlowWatch.Windows/FlowWatch-*.zip
           generate_release_notes: true
