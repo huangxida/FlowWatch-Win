@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:FlowWatch.ViewModels"
         Title="{DynamicResource Settings.WindowTitle}"
-        Width="480" Height="620"
-        ResizeMode="NoResize"
+        Width="880" Height="640"
+        MinWidth="780" MinHeight="560"
+        ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource SettingsWindowStyle}"
         ShowInTaskbar="True">
@@ -12,324 +13,309 @@
         <vm:SettingsViewModel/>
     </Window.DataContext>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="32,28,32,28">
-
-            <!-- Header -->
-            <TextBlock Text="{DynamicResource Settings.Header}" FontSize="20" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,24"/>
-
-            <!-- Section: General -->
-            <TextBlock Text="{DynamicResource Settings.General}" FontSize="11.5" FontWeight="Medium"
-                       Foreground="{StaticResource HintBrush}" Margin="0,0,0,10"
-                       />
-
-            <Border Background="{StaticResource CardBackgroundBrush}"
-                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="16,4">
-                <StackPanel>
-                    <!-- Language -->
-                    <DockPanel Margin="0,10,0,10">
-                        <TextBlock Text="{DynamicResource Settings.Language}" Style="{StaticResource FieldLabelStyle}"
-                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <ComboBox SelectedValue="{Binding Language}" SelectedValuePath="Tag"
-                                  Style="{StaticResource SettingsComboBoxStyle}"
-                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                  Width="140" VerticalAlignment="Center">
-                            <ComboBoxItem Content="{DynamicResource Settings.LanguageAuto}" Tag="auto"/>
-                            <ComboBoxItem Content="English" Tag="en"/>
-                            <ComboBoxItem Tag="zh">中文</ComboBoxItem>
-                        </ComboBox>
-                    </DockPanel>
-
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Refresh interval -->
-                    <DockPanel Margin="0,10,0,10">
-                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Settings.RefreshRate}" Style="{StaticResource FieldLabelStyle}"/>
-                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.RefreshRateHint}"/>
-                        </StackPanel>
-                        <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                    VerticalAlignment="Center" Orientation="Horizontal">
-                            <Slider Value="{Binding RefreshIntervalSeconds}" Width="120"
-                                    Minimum="1" Maximum="10" IsSnapToTickEnabled="True"
-                                    TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
-                                    VerticalAlignment="Center"/>
-                            <TextBlock Style="{StaticResource ValueStyle}" Width="32"
-                                       TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0">
-                                <TextBlock.Text>
-                                    <Binding Path="RefreshIntervalSeconds" StringFormat="{}{0}s"/>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </StackPanel>
-                    </DockPanel>
-
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Auto launch -->
-                    <DockPanel Margin="0,10,0,10">
-                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Settings.AutoLaunch}" Style="{StaticResource FieldLabelStyle}"/>
-                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.AutoLaunchHint}"/>
-                        </StackPanel>
-                        <CheckBox IsChecked="{Binding AutoLaunch}"
-                                  Style="{StaticResource ToggleSwitchStyle}"
-                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"/>
-                    </DockPanel>
-
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Auto check update -->
-                    <DockPanel Margin="0,10,0,10">
-                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Settings.AutoCheckUpdate}" Style="{StaticResource FieldLabelStyle}"/>
-                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.AutoCheckUpdateHint}"/>
-                        </StackPanel>
-                        <CheckBox IsChecked="{Binding AutoCheckUpdate}"
-                                  Style="{StaticResource ToggleSwitchStyle}"
-                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"/>
-                    </DockPanel>
-
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Check update -->
-                    <StackPanel Margin="0,10,0,10">
-                        <DockPanel Margin="0,0,0,6">
-                            <TextBlock Style="{StaticResource FieldLabelStyle}"
-                                       DockPanel.Dock="Left" VerticalAlignment="Center">
-                                <Run Text="{DynamicResource Settings.CurrentVersionLabel}"/>
-                                <Run Text="{Binding CurrentVersion, Mode=OneWay}"/>
-                            </TextBlock>
-                        </DockPanel>
-                        <!-- Skipped version hint -->
-                        <DockPanel x:Name="SkippedPanel" Margin="0,0,0,8" Visibility="Collapsed">
-                            <TextBlock x:Name="SkippedText" Style="{StaticResource HintStyle}"
-                                       DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                            <Button Content="{DynamicResource Settings.ClearSkip}"
-                                    Command="{Binding ClearSkippedCommand}"
-                                    DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                    VerticalAlignment="Center" Padding="8,3"
-                                    FontSize="11.5" Cursor="Hand">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <TextBlock Text="{TemplateBinding Content}"
-                                                   Foreground="#FF4A90D9" FontSize="11.5"
-                                                   Cursor="Hand"/>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                        </DockPanel>
-                        <Button x:Name="CheckUpdateButton"
-                                Content="{DynamicResource Tray.CheckUpdate}"
-                                Command="{Binding CheckUpdateCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                HorizontalAlignment="Stretch"/>
+    <TabControl Style="{StaticResource SidebarTabControlStyle}"
+                ItemContainerStyle="{StaticResource SidebarTabItemStyle}">
+        <TabControl.Tag>
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Image Source="/Resources/generated_icon.png" Width="34" Height="34"
+                           RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,10,0"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="FlowWatch" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock Text="{DynamicResource Settings.WindowTitle}" FontSize="11.5"
+                                   Foreground="{StaticResource HintBrush}"/>
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </StackPanel>
+        </TabControl.Tag>
 
-            <!-- Section: Window -->
-            <TextBlock Text="{DynamicResource Settings.Window}" FontSize="11.5" FontWeight="Medium"
-                       Foreground="{StaticResource HintBrush}" Margin="0,20,0,10"
-                       />
+        <TabItem Header="{DynamicResource Settings.General}">
+            <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock Text="{DynamicResource Settings.General}" Style="{StaticResource WindowTitleStyle}"/>
+                    <TextBlock Text="{DynamicResource Settings.GeneralSubtitle}" Style="{StaticResource WindowSubtitleStyle}"
+                               Margin="0,4,0,20"/>
 
-            <Border Background="{StaticResource CardBackgroundBrush}"
-                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="16,4">
-                <StackPanel>
-                    <!-- Lock on top -->
-                    <DockPanel Margin="0,10,0,10">
-                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Settings.LockOnTop}" Style="{StaticResource FieldLabelStyle}"/>
-                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.LockOnTopHint}"/>
+                    <Border Style="{StaticResource ModernCardStyle}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,14">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.Language}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.LanguageHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <ComboBox SelectedValue="{Binding Language}" SelectedValuePath="Tag"
+                                          Style="{StaticResource SettingsComboBoxStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                          Width="172" VerticalAlignment="Center">
+                                    <ComboBoxItem Content="{DynamicResource Settings.LanguageAuto}" Tag="auto"/>
+                                    <ComboBoxItem Content="English" Tag="en"/>
+                                    <ComboBoxItem Content="中文" Tag="zh"/>
+                                </ComboBox>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <DockPanel Margin="0,14,0,14">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.RefreshRate}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.RefreshRateHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                            VerticalAlignment="Center" Orientation="Horizontal">
+                                    <Slider Value="{Binding RefreshIntervalSeconds}" Width="160"
+                                            Minimum="1" Maximum="10" IsSnapToTickEnabled="True"
+                                            TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
+                                            VerticalAlignment="Center"/>
+                                    <TextBlock Style="{StaticResource ValueStyle}" Width="42"
+                                               TextAlignment="Right" VerticalAlignment="Center" Margin="10,0,0,0"
+                                               Text="{Binding RefreshIntervalSeconds, StringFormat={}{0}s}"/>
+                                </StackPanel>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <DockPanel Margin="0,14,0,14">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.AutoLaunch}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.AutoLaunchHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox IsChecked="{Binding AutoLaunch}"
+                                          Style="{StaticResource ToggleSwitchStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"/>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <DockPanel Margin="0,14,0,0">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.AutoCheckUpdate}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.AutoCheckUpdateHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox IsChecked="{Binding AutoCheckUpdate}"
+                                          Style="{StaticResource ToggleSwitchStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"/>
+                            </DockPanel>
                         </StackPanel>
-                        <CheckBox IsChecked="{Binding LockOnTop}"
-                                  Style="{StaticResource ToggleSwitchStyle}"
-                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"/>
-                    </DockPanel>
+                    </Border>
 
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Auto hide -->
-                    <DockPanel Margin="0,10,0,10">
-                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Settings.AutoHide}" Style="{StaticResource FieldLabelStyle}"/>
-                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.AutoHideHint}"/>
-                        </StackPanel>
-                        <CheckBox IsChecked="{Binding AutoHide}"
-                                  Style="{StaticResource ToggleSwitchStyle}"
-                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"/>
-                    </DockPanel>
-
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Layout -->
-                    <DockPanel Margin="0,10,0,10">
-                        <TextBlock Text="{DynamicResource Settings.Layout}" Style="{StaticResource FieldLabelStyle}"
-                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <ComboBox SelectedValue="{Binding Layout}" SelectedValuePath="Tag"
-                                  Style="{StaticResource SettingsComboBoxStyle}"
-                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                  Width="120" VerticalAlignment="Center">
-                            <ComboBoxItem Content="{DynamicResource Settings.LayoutHorizontal}" Tag="horizontal"/>
-                            <ComboBoxItem Content="{DynamicResource Settings.LayoutVertical}" Tag="vertical"/>
-                        </ComboBox>
-                    </DockPanel>
-
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Display mode -->
-                    <DockPanel Margin="0,10,0,10">
-                        <TextBlock Text="{DynamicResource Settings.DisplayMode}" Style="{StaticResource FieldLabelStyle}"
-                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <ComboBox SelectedValue="{Binding DisplayMode}" SelectedValuePath="Tag"
-                                  Style="{StaticResource SettingsComboBoxStyle}"
-                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                  Width="120" VerticalAlignment="Center">
-                            <ComboBoxItem Content="{DynamicResource Settings.DisplaySpeed}" Tag="speed"/>
-                            <ComboBoxItem Content="{DynamicResource Settings.DisplayUsage}" Tag="usage"/>
-                            <ComboBoxItem Content="{DynamicResource Settings.DisplayBoth}" Tag="both"/>
-                        </ComboBox>
-                    </DockPanel>
-
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Smooth transition -->
-                    <DockPanel Margin="0,10,0,10">
-                        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Settings.SmoothTransition}" Style="{StaticResource FieldLabelStyle}"/>
-                            <TextBlock Style="{StaticResource HintStyle}" Text="{DynamicResource Settings.SmoothTransitionHint}"/>
-                        </StackPanel>
-                        <CheckBox IsChecked="{Binding SmoothTransition}"
-                                  Style="{StaticResource ToggleSwitchStyle}"
-                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"/>
-                    </DockPanel>
-                </StackPanel>
-            </Border>
-
-            <!-- Section: Appearance -->
-            <TextBlock Text="{DynamicResource Settings.Appearance}" FontSize="11.5" FontWeight="Medium"
-                       Foreground="{StaticResource HintBrush}" Margin="0,20,0,10"
-                       />
-
-            <Border Background="{StaticResource CardBackgroundBrush}"
-                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="16,4">
-                <StackPanel>
-                    <!-- Font family -->
-                    <StackPanel Margin="0,10,0,10">
-                        <TextBlock Text="{DynamicResource Settings.Font}" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,8"/>
+                    <Border Style="{StaticResource SoftPanelStyle}" Margin="0,16,0,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <ComboBox x:Name="FontPresetCombo" Grid.Column="0"
-                                      Style="{StaticResource SettingsComboBoxStyle}"
-                                      SelectionChanged="OnFontPresetChanged" Margin="0,0,8,0"
-                                      Width="160">
-                                <ComboBoxItem Content="{DynamicResource Settings.FontPreset}" Tag=""/>
-                                <ComboBoxItem Content="Segoe UI" Tag="Segoe UI, Microsoft YaHei, sans-serif"/>
-                                <ComboBoxItem Content="Microsoft YaHei" Tag="Microsoft YaHei, Segoe UI, sans-serif"/>
-                                <ComboBoxItem Content="Arial" Tag="Arial, Helvetica, sans-serif"/>
-                                <ComboBoxItem Content="Consolas" Tag="Consolas, Courier New, monospace"/>
-                            </ComboBox>
-                            <TextBox Grid.Column="1"
-                                     Text="{Binding FontFamily, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource SettingsTextBoxStyle}"/>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Style="{StaticResource FieldLabelStyle}">
+                                    <Run Text="{DynamicResource Settings.CurrentVersionLabel}"/>
+                                    <Run Text="{Binding CurrentVersion, Mode=OneWay}"/>
+                                </TextBlock>
+                                <DockPanel x:Name="SkippedPanel" Visibility="Collapsed" Margin="0,4,0,0">
+                                    <TextBlock x:Name="SkippedText" Style="{StaticResource HintStyle}"
+                                               DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                    <Button Content="{DynamicResource Settings.ClearSkip}"
+                                            Command="{Binding ClearSkippedCommand}"
+                                            Style="{StaticResource LinkButtonStyle}"
+                                            DockPanel.Dock="Right" Margin="10,0,0,0"/>
+                                </DockPanel>
+                            </StackPanel>
+                            <Button x:Name="CheckUpdateButton" Grid.Column="1"
+                                    Content="{DynamicResource Tray.CheckUpdate}"
+                                    Command="{Binding CheckUpdateCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    VerticalAlignment="Center" Margin="18,0,0,0"/>
                         </Grid>
-                    </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
 
-                    <Border Style="{StaticResource DividerStyle}"/>
+        <TabItem Header="{DynamicResource Settings.Window}">
+            <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock Text="{DynamicResource Settings.Window}" Style="{StaticResource WindowTitleStyle}"/>
+                    <TextBlock Text="{DynamicResource Settings.WindowSubtitle}" Style="{StaticResource WindowSubtitleStyle}"
+                               Margin="0,4,0,20"/>
 
-                    <!-- Font size -->
-                    <DockPanel Margin="0,10,0,10">
-                        <TextBlock Text="{DynamicResource Settings.FontSize}" Style="{StaticResource FieldLabelStyle}"
-                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                        <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                    Orientation="Horizontal" VerticalAlignment="Center">
-                            <Slider Value="{Binding FontSize}" Width="120"
-                                    Minimum="11" Maximum="19" IsSnapToTickEnabled="True"
-                                    TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
-                                    VerticalAlignment="Center"/>
-                            <TextBlock Style="{StaticResource ValueStyle}" Width="36"
-                                       TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0">
-                                <TextBlock.Text>
-                                    <Binding Path="FontSize" StringFormat="{}{0}px"/>
-                                </TextBlock.Text>
-                            </TextBlock>
+                    <Border Style="{StaticResource ModernCardStyle}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,14">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.LockOnTop}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.LockOnTopHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox IsChecked="{Binding LockOnTop}" Style="{StaticResource ToggleSwitchStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <DockPanel Margin="0,14,0,14">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.AutoHide}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.AutoHideHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox IsChecked="{Binding AutoHide}" Style="{StaticResource ToggleSwitchStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <DockPanel Margin="0,14,0,14">
+                                <TextBlock Text="{DynamicResource Settings.Layout}" Style="{StaticResource FieldLabelStyle}"
+                                           DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                <ComboBox SelectedValue="{Binding Layout}" SelectedValuePath="Tag"
+                                          Style="{StaticResource SettingsComboBoxStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                          Width="150" VerticalAlignment="Center">
+                                    <ComboBoxItem Content="{DynamicResource Settings.LayoutHorizontal}" Tag="horizontal"/>
+                                    <ComboBoxItem Content="{DynamicResource Settings.LayoutVertical}" Tag="vertical"/>
+                                </ComboBox>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <DockPanel Margin="0,14,0,14">
+                                <TextBlock Text="{DynamicResource Settings.DisplayMode}" Style="{StaticResource FieldLabelStyle}"
+                                           DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                <ComboBox SelectedValue="{Binding DisplayMode}" SelectedValuePath="Tag"
+                                          Style="{StaticResource SettingsComboBoxStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                          Width="150" VerticalAlignment="Center">
+                                    <ComboBoxItem Content="{DynamicResource Settings.DisplaySpeed}" Tag="speed"/>
+                                    <ComboBoxItem Content="{DynamicResource Settings.DisplayUsage}" Tag="usage"/>
+                                    <ComboBoxItem Content="{DynamicResource Settings.DisplayBoth}" Tag="both"/>
+                                </ComboBox>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <DockPanel Margin="0,14,0,0">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.SmoothTransition}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.SmoothTransitionHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox IsChecked="{Binding SmoothTransition}" Style="{StaticResource ToggleSwitchStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </DockPanel>
                         </StackPanel>
-                    </DockPanel>
-
-                    <Border Style="{StaticResource DividerStyle}"/>
-
-                    <!-- Color max -->
-                    <StackPanel Margin="0,10,0,10">
-                        <DockPanel>
-                            <TextBlock Text="{DynamicResource Settings.ColorMax}" Style="{StaticResource FieldLabelStyle}"
-                                       DockPanel.Dock="Left" VerticalAlignment="Center"/>
-                            <TextBlock Style="{StaticResource ValueStyle}"
-                                       DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                       VerticalAlignment="Center">
-                                <TextBlock.Text>
-                                    <Binding Path="SpeedColorMaxMbps" StringFormat="{}{0} Mbps"/>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </DockPanel>
-                        <TextBlock Style="{StaticResource HintStyle}"
-                                   Text="{DynamicResource Settings.ColorMaxHint}" Margin="0,2,0,6"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="80"/>
-                            </Grid.ColumnDefinitions>
-                            <Slider Grid.Column="0" Value="{Binding SpeedColorMaxMbps}"
-                                    Minimum="1" Maximum="1000" IsSnapToTickEnabled="True"
-                                    TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
-                                    VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1"
-                                     Text="{Binding SpeedColorMaxMbps, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource SettingsTextBoxStyle}" Margin="8,0,0,0"/>
-                        </Grid>
-                    </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
+            </ScrollViewer>
+        </TabItem>
 
-            <!-- Section: Traffic Statistics -->
-            <TextBlock Text="{DynamicResource Settings.TrafficStats}" FontSize="11.5" FontWeight="Medium"
-                       Foreground="{StaticResource HintBrush}" Margin="0,20,0,10"
-                       />
+        <TabItem Header="{DynamicResource Settings.Appearance}">
+            <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock Text="{DynamicResource Settings.Appearance}" Style="{StaticResource WindowTitleStyle}"/>
+                    <TextBlock Text="{DynamicResource Settings.AppearanceSubtitle}" Style="{StaticResource WindowSubtitleStyle}"
+                               Margin="0,4,0,20"/>
 
-            <Border Background="{StaticResource CardBackgroundBrush}"
-                    BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
-                    CornerRadius="8" Padding="16,12">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource HintStyle}"
-                               Text="{DynamicResource Settings.ResetHint}" Margin="0,0,0,12"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="{DynamicResource Settings.ResetToday}"
-                                Command="{Binding ResetTodayCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                HorizontalAlignment="Stretch"/>
-                        <Button Grid.Column="2" Content="{DynamicResource Settings.ResetAll}"
-                                Command="{Binding ResetAllCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                HorizontalAlignment="Stretch"/>
-                    </Grid>
+                    <Border Style="{StaticResource ModernCardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Settings.Font}" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,8"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="FontPresetCombo" Grid.Column="0"
+                                          Style="{StaticResource SettingsComboBoxStyle}"
+                                          SelectedIndex="0"
+                                          SelectionChanged="OnFontPresetChanged">
+                                    <ComboBoxItem Content="{DynamicResource Settings.FontPreset}" Tag=""/>
+                                    <ComboBoxItem Content="Segoe UI" Tag="Segoe UI, Microsoft YaHei, sans-serif"/>
+                                    <ComboBoxItem Content="Microsoft YaHei" Tag="Microsoft YaHei, Segoe UI, sans-serif"/>
+                                    <ComboBoxItem Content="Arial" Tag="Arial, Helvetica, sans-serif"/>
+                                    <ComboBoxItem Content="Consolas" Tag="Consolas, Courier New, monospace"/>
+                                </ComboBox>
+                                <TextBox Grid.Column="2"
+                                         Text="{Binding FontFamily, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SettingsTextBoxStyle}"/>
+                            </Grid>
+
+                            <Border Style="{StaticResource DividerStyle}" Margin="0,18,0,12"/>
+
+                            <DockPanel Margin="0,0,0,16">
+                                <TextBlock Text="{DynamicResource Settings.FontSize}" Style="{StaticResource FieldLabelStyle}"
+                                           DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                            Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Slider Value="{Binding FontSize}" Width="170"
+                                            Minimum="11" Maximum="19" IsSnapToTickEnabled="True"
+                                            TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
+                                            VerticalAlignment="Center"/>
+                                    <TextBlock Style="{StaticResource ValueStyle}" Width="48"
+                                               TextAlignment="Right" VerticalAlignment="Center" Margin="10,0,0,0"
+                                               Text="{Binding FontSize, StringFormat={}{0}px}"/>
+                                </StackPanel>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <StackPanel Margin="0,14,0,0">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                        <TextBlock Text="{DynamicResource Settings.ColorMax}" Style="{StaticResource FieldLabelStyle}"/>
+                                        <TextBlock Text="{DynamicResource Settings.ColorMaxHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource ValueStyle}" DockPanel.Dock="Right"
+                                               HorizontalAlignment="Right" VerticalAlignment="Top"
+                                               Text="{Binding SpeedColorMaxMbps, StringFormat={}{0} Mbps}"/>
+                                </DockPanel>
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="96"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider Grid.Column="0" Value="{Binding SpeedColorMaxMbps}"
+                                            Minimum="1" Maximum="1000" IsSnapToTickEnabled="True"
+                                            TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
+                                            VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding SpeedColorMaxMbps, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource SettingsTextBoxStyle}" Margin="12,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
+            </ScrollViewer>
+        </TabItem>
 
-        </StackPanel>
-    </ScrollViewer>
+        <TabItem Header="{DynamicResource Settings.TrafficStats}">
+            <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock Text="{DynamicResource Settings.TrafficStats}" Style="{StaticResource WindowTitleStyle}"/>
+                    <TextBlock Text="{DynamicResource Settings.TrafficStatsSubtitle}" Style="{StaticResource WindowSubtitleStyle}"
+                               Margin="0,4,0,20"/>
+
+                    <Border Style="{StaticResource ModernCardStyle}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HintStyle}"
+                                       Text="{DynamicResource Settings.ResetHint}" Margin="0,0,0,16"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="{DynamicResource Settings.ResetToday}"
+                                        Command="{Binding ResetTodayCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Stretch"/>
+                                <Button Grid.Column="2" Content="{DynamicResource Settings.ResetAll}"
+                                        Command="{Binding ResetAllCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        HorizontalAlignment="Stretch"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+    </TabControl>
 </Window>
