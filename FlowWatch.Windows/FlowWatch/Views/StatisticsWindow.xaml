@@ -95,7 +95,7 @@
                                 <TextBlock Text="{DynamicResource Stats.AllHistory}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Border>
-                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,10">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource Stats.TodayTraffic}" Style="{StaticResource MetricTitleStyle}"/>
                                 <TextBlock Text="{Binding TodayTrafficFormatted}" Style="{StaticResource MetricValueStyle}"
@@ -103,7 +103,7 @@
                                 <TextBlock Text="{DynamicResource Stats.PeriodToday}" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
                             </StackPanel>
                         </Border>
-                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
+                        <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,10">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource Stats.YesterdayTraffic}" Style="{StaticResource MetricTitleStyle}"/>
                                 <TextBlock Text="{Binding YesterdayTrafficFormatted}" Style="{StaticResource MetricValueStyle}"
@@ -259,7 +259,7 @@
                             <Border Style="{StaticResource SoftPanelStyle}">
                                 <StackPanel>
                                     <TextBlock Text="{DynamicResource Stats.AllTimePeak}" Style="{StaticResource MetricTitleStyle}"/>
-                                    <TextBlock Text="{Binding AllTimePeakFormatted}" Style="{StaticResource MetricValueStyle}" FontSize="16" Foreground="{StaticResource PinkBrush}" Margin="0,8,0,0"/>
+                                    <TextBlock Text="{Binding AllTimePeakFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource PinkBrush}" Margin="0,8,0,0"/>
                                 </StackPanel>
                             </Border>
                         </UniformGrid>
@@ -332,7 +332,7 @@
                         <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource Stats.Last7Peak}" Style="{StaticResource MetricTitleStyle}"/>
-                                <TextBlock Text="{Binding Last7PeakFormatted}" Style="{StaticResource MetricValueStyle}" FontSize="16" Foreground="{StaticResource OrangeBrush}" Margin="0,8,0,0"/>
+                                <TextBlock Text="{Binding Last7PeakFormatted}" Style="{StaticResource MetricValueStyle}" Foreground="{StaticResource OrangeBrush}" Margin="0,8,0,0"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource MetricCardStyle}" Margin="0,0,10,0">
