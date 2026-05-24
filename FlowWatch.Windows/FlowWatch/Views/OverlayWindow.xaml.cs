@@ -54,6 +54,13 @@ namespace FlowWatch.Views
         public void ReassertTopmostWithDiagnostics()
         {
             CaptureTopmostSnapshot("TrayManual-Requested", true);
+            var hwnd = new WindowInteropHelper(this).Handle;
+            if (hwnd != IntPtr.Zero && TryFindBlockingTopmostWindow(hwnd, out var blockingWindow))
+            {
+                LogService.Warn(
+                    $"Manual topmost reassert found another topmost window above overlay. reason=TrayManual-TopmostOverlap, blocker={blockingWindow}");
+            }
+
             RecoverTopmost("TrayManual");
         }
 
@@ -259,6 +266,15 @@ namespace FlowWatch.Views
                     $"Overlay topmost dropped, recovering. reason=Watchdog-Mismatch, WpfTopmost={Topmost}, Win32Topmost={isTopMost}");
                 CaptureTopmostSnapshot("Watchdog-Mismatch", true);
                 RecoverTopmost("Watchdog-Mismatch");
+                return;
+            }
+
+            if (TryFindBlockingTopmostWindow(hwnd, out var blockingWindow))
+            {
+                LogService.Warn(
+                    $"Overlay topmost overlapped by another topmost window, recovering. reason=Watchdog-TopmostOverlap, blocker={blockingWindow}");
+                CaptureTopmostSnapshot("Watchdog-TopmostOverlap", true);
+                RecoverTopmost("Watchdog-TopmostOverlap");
             }
         }
 
@@ -477,6 +493,95 @@ namespace FlowWatch.Views
         private bool ShouldMonitorTopmost()
         {
             return SettingsService.Instance.Settings.LockOnTop && IsVisible;
+        }
+
+        private bool TryFindBlockingTopmostWindow(IntPtr overlayHwnd, out string blockingWindow)
+        {
+            blockingWindow = null;
+
+            if (!NativeInterop.GetWindowRect(overlayHwnd, out var overlayRect) ||
+                IsEmptyRect(overlayRect))
+            {
+                return false;
+            }
+
+            var overlayProcessId = NativeInterop.GetProcessId(overlayHwnd);
+            var current = NativeInterop.GetWindow(overlayHwnd, NativeInterop.GW_HWNDPREV);
+            var inspected = 0;
+
+            while (current != IntPtr.Zero && inspected < 64)
+            {
+                inspected++;
+
+                if (current == overlayHwnd)
+                {
+                    current = NativeInterop.GetWindow(current, NativeInterop.GW_HWNDPREV);
+                    continue;
+                }
+
+                if (IsPotentialBlockingWindow(current, overlayProcessId, overlayRect))
+                {
+                    blockingWindow = DescribeWindowWithBounds(current);
+                    return true;
+                }
+
+                current = NativeInterop.GetWindow(current, NativeInterop.GW_HWNDPREV);
+            }
+
+            return false;
+        }
+
+        private static bool IsPotentialBlockingWindow(IntPtr hwnd, uint overlayProcessId, RECT overlayRect)
+        {
+            if (hwnd == IntPtr.Zero ||
+                !NativeInterop.IsWindowVisible(hwnd) ||
+                !NativeInterop.IsTopMost(hwnd))
+            {
+                return false;
+            }
+
+            var processId = NativeInterop.GetProcessId(hwnd);
+            if (processId != 0 && processId == overlayProcessId)
+            {
+                return false;
+            }
+
+            if (!NativeInterop.GetWindowRect(hwnd, out var rect) || IsEmptyRect(rect))
+            {
+                return false;
+            }
+
+            return RectsIntersect(overlayRect, rect);
+        }
+
+        private string DescribeWindowWithBounds(IntPtr hwnd)
+        {
+            if (hwnd == IntPtr.Zero) return "0x0";
+
+            var bounds = NativeInterop.GetWindowRect(hwnd, out var rect)
+                ? string.Format(
+                    CultureInfo.InvariantCulture,
+                    " bounds=({0},{1},{2}x{3})",
+                    rect.Left,
+                    rect.Top,
+                    rect.Width,
+                    rect.Height)
+                : string.Empty;
+
+            return DescribeWindow(hwnd, true) + bounds;
+        }
+
+        private static bool IsEmptyRect(RECT rect)
+        {
+            return rect.Width <= 0 || rect.Height <= 0;
+        }
+
+        private static bool RectsIntersect(RECT first, RECT second)
+        {
+            return first.Left < second.Right &&
+                   first.Right > second.Left &&
+                   first.Top < second.Bottom &&
+                   first.Bottom > second.Top;
         }
 
         private static bool IsSuspiciousWindowPos(WINDOWPOS windowPos)
