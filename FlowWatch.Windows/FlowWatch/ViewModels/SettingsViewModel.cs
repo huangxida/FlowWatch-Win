@@ -7,6 +7,8 @@ namespace FlowWatch.ViewModels
 {
     public class SettingsViewModel : ViewModelBase
     {
+        private const string MinimalDisplayMode = "minimal";
+
         private int _refreshIntervalSeconds = 1;
         private bool _lockOnTop = true;
         private bool _autoHide;
@@ -122,7 +124,7 @@ namespace FlowWatch.ViewModels
             get => _displayMode;
             set
             {
-                if (SetProperty(ref _displayMode, value))
+                if (SetProperty(ref _displayMode, NormalizeDisplayMode(value)))
                     PushSettings();
             }
         }
@@ -203,7 +205,7 @@ namespace FlowWatch.ViewModels
             AutoCheckUpdate = s.AutoCheckUpdate;
             Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
-            DisplayMode = s.DisplayMode ?? "speed";
+            DisplayMode = s.DisplayMode;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
@@ -254,7 +256,7 @@ namespace FlowWatch.ViewModels
             AutoCheckUpdate = s.AutoCheckUpdate;
             Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
-            DisplayMode = s.DisplayMode ?? "speed";
+            DisplayMode = s.DisplayMode;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
@@ -344,6 +346,20 @@ namespace FlowWatch.ViewModels
         public void Cleanup()
         {
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
+        }
+
+        private static string NormalizeDisplayMode(string value)
+        {
+            switch (value)
+            {
+                case "speed":
+                case "usage":
+                case "both":
+                case MinimalDisplayMode:
+                    return value;
+                default:
+                    return "speed";
+            }
         }
     }
 

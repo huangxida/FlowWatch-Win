@@ -15,16 +15,6 @@
 
     <TabControl Style="{StaticResource SidebarTabControlStyle}"
                 ItemContainerStyle="{StaticResource SidebarTabItemStyle}">
-        <TabControl.Tag>
-            <StackPanel>
-                <TextBlock Text="{DynamicResource Stats.Header}" FontSize="15"
-                           FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
-                <TextBlock Text="{DynamicResource Stats.SidebarSubtitle}" FontSize="11.5"
-                           Foreground="{StaticResource HintBrush}" Margin="0,3,0,0"
-                           TextWrapping="Wrap"/>
-            </StackPanel>
-        </TabControl.Tag>
-
         <TabItem Header="{DynamicResource Stats.Overview}">
             <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Visible"
                           Margin="0,0,-18,0">

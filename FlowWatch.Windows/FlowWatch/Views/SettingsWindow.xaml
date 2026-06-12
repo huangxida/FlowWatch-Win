@@ -17,16 +17,9 @@
                 ItemContainerStyle="{StaticResource SidebarTabItemStyle}">
         <TabControl.Tag>
             <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                    <Image Source="/Resources/generated_icon.png" Width="34" Height="34"
-                           RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,10,0"/>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="FlowWatch" FontSize="15" FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextBrush}"/>
-                        <TextBlock Text="{DynamicResource Settings.WindowTitle}" FontSize="11.5"
-                                   Foreground="{StaticResource HintBrush}"/>
-                    </StackPanel>
-                </StackPanel>
+                <Image Source="/Resources/generated_icon.png" Width="34" Height="34"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       HorizontalAlignment="Left" Margin="0,0,0,16"/>
             </StackPanel>
         </TabControl.Tag>
 
@@ -187,6 +180,7 @@
                                     <ComboBoxItem Content="{DynamicResource Settings.DisplaySpeed}" Tag="speed"/>
                                     <ComboBoxItem Content="{DynamicResource Settings.DisplayUsage}" Tag="usage"/>
                                     <ComboBoxItem Content="{DynamicResource Settings.DisplayBoth}" Tag="both"/>
+                                    <ComboBoxItem Content="{DynamicResource Settings.DisplayMinimal}" Tag="minimal"/>
                                 </ComboBox>
                             </DockPanel>
 

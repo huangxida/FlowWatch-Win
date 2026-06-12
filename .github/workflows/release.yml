@@ -22,7 +22,7 @@ jobs:
       - name: Extract version
         id: version
         shell: bash
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v3

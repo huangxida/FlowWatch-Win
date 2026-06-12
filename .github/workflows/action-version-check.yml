@@ -1,0 +1,94 @@
+name: GitHub Actions Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - ".github/workflows/**"
+      - ".github/dependabot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-actions-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: Lint GitHub Actions workflows
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run actionlint
+        uses: raven-actions/actionlint@v2.1.2
+
+  action-version-policy:
+    name: Check GitHub Actions version references
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Check external action references
+        shell: pwsh
+        run: |
+          $violations = [System.Collections.Generic.List[string]]::new()
+          $floatingRefs = @("main", "master", "HEAD", "latest")
+          $workflowFiles = @(
+            Get-ChildItem -Path ".github/workflows" -Filter "*.yml" -File
+            Get-ChildItem -Path ".github/workflows" -Filter "*.yaml" -File
+          )
+
+          foreach ($file in $workflowFiles) {
+            $lines = Get-Content -Path $file.FullName
+            for ($index = 0; $index -lt $lines.Count; $index++) {
+              $line = $lines[$index]
+              if ($line -notmatch '^\s*uses:\s*[''"]?([^''"\s#]+)') {
+                continue
+              }
+
+              $reference = $Matches[1]
+              if ($reference.StartsWith("./") -or $reference.StartsWith(".\")) {
+                continue
+              }
+
+              $atIndex = $reference.LastIndexOf("@")
+              $location = "$($file.FullName):$($index + 1)"
+
+              if ($atIndex -lt 0) {
+                $violations.Add("$location uses '$reference' without an explicit @version or @sha.")
+                continue
+              }
+
+              $versionRef = $reference.Substring($atIndex + 1)
+              if ($floatingRefs -contains $versionRef) {
+                $violations.Add("$location uses '$reference' with a floating ref '$versionRef'.")
+              }
+            }
+          }
+
+          if ($violations.Count -gt 0) {
+            $violations | ForEach-Object { Write-Error $_ }
+            exit 1
+          }
+
+      - name: Check Dependabot coverage
+        shell: pwsh
+        run: |
+          $dependabotPath = ".github/dependabot.yml"
+          if (-not (Test-Path $dependabotPath)) {
+            Write-Error "Missing $dependabotPath."
+            exit 1
+          }
+
+          $content = Get-Content -Path $dependabotPath -Raw
+          if ($content -notmatch 'package-ecosystem:\s*github-actions') {
+            Write-Error "$dependabotPath must include package-ecosystem: github-actions."
+            exit 1
+          }

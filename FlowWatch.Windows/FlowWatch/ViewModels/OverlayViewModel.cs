@@ -11,6 +11,10 @@ namespace FlowWatch.ViewModels
 {
     public class OverlayViewModel : ViewModelBase
     {
+        private const string MinimalDisplayMode = "minimal";
+        private const double SignalBreathMinDelta = 16 * 1024.0;
+        private const double SignalEnergyEpsilon = 0.004;
+
         private string _uploadNum = "0";
         private string _uploadUnit = "KB/s";
         private string _downloadNum = "0";
@@ -29,6 +33,12 @@ namespace FlowWatch.ViewModels
         private bool _isLocked = true;
         private string _displayMode = "speed";
         private Visibility _secondaryVisibility = Visibility.Collapsed;
+        private Visibility _standardVisibility = Visibility.Visible;
+        private Visibility _minimalVisibility = Visibility.Collapsed;
+        private Brush _uploadSignalColor = Brushes.White;
+        private Brush _downloadSignalColor = Brushes.White;
+        private double _uploadSignalOpacity = 1.0;
+        private double _downloadSignalOpacity = 1.0;
 
         // Smooth transition animation state
         private double _displayedDownSpeed, _displayedUpSpeed;
@@ -46,6 +56,9 @@ namespace FlowWatch.ViewModels
         private bool _totalsInitialized;
         private long _lastDownColorQ = -1;
         private long _lastUpColorQ = -1;
+        private bool _signalRenderingSubscribed;
+        private readonly SignalBreathState _downloadBreath = new SignalBreathState();
+        private readonly SignalBreathState _uploadBreath = new SignalBreathState();
 
         private static readonly Brush DefaultUpLabelColor = new SolidColorBrush(Color.FromRgb(0x9E, 0xF6, 0xC5));
         private static readonly Brush DefaultDownLabelColor = new SolidColorBrush(Color.FromRgb(0xFF, 0xDA, 0x89));
@@ -147,8 +160,14 @@ namespace FlowWatch.ViewModels
         public double FontSize
         {
             get => _fontSize;
-            set => SetProperty(ref _fontSize, value);
+            set
+            {
+                if (SetProperty(ref _fontSize, value))
+                    OnPropertyChanged(nameof(MinimalFontSize));
+            }
         }
+
+        public double MinimalFontSize => Math.Max(10, FontSize - 1);
 
         public bool IsVertical
         {
@@ -167,11 +186,18 @@ namespace FlowWatch.ViewModels
             get => _displayMode;
             set
             {
-                if (SetProperty(ref _displayMode, value))
+                var mode = NormalizeDisplayMode(value);
+                if (SetProperty(ref _displayMode, mode))
                 {
-                    SecondaryVisibility = value == "both" ? Visibility.Visible : Visibility.Collapsed;
+                    var isMinimal = mode == MinimalDisplayMode;
+                    SecondaryVisibility = mode == "both" ? Visibility.Visible : Visibility.Collapsed;
+                    StandardVisibility = isMinimal ? Visibility.Collapsed : Visibility.Visible;
+                    MinimalVisibility = isMinimal ? Visibility.Visible : Visibility.Collapsed;
+                    if (!isMinimal)
+                        ResetSignalBreathing();
                     OnPropertyChanged(nameof(ShowSpeed));
                     OnPropertyChanged(nameof(ShowUsage));
+                    OnPropertyChanged(nameof(IsMinimalMode));
                 }
             }
         }
@@ -182,11 +208,50 @@ namespace FlowWatch.ViewModels
             set => SetProperty(ref _secondaryVisibility, value);
         }
 
-        public bool ShowSpeed => _displayMode != "usage";
+        public Visibility StandardVisibility
+        {
+            get => _standardVisibility;
+            set => SetProperty(ref _standardVisibility, value);
+        }
+
+        public Visibility MinimalVisibility
+        {
+            get => _minimalVisibility;
+            set => SetProperty(ref _minimalVisibility, value);
+        }
+
+        public Brush UploadSignalColor
+        {
+            get => _uploadSignalColor;
+            set => SetProperty(ref _uploadSignalColor, value);
+        }
+
+        public Brush DownloadSignalColor
+        {
+            get => _downloadSignalColor;
+            set => SetProperty(ref _downloadSignalColor, value);
+        }
+
+        public double UploadSignalOpacity
+        {
+            get => _uploadSignalOpacity;
+            set => SetProperty(ref _uploadSignalOpacity, value);
+        }
+
+        public double DownloadSignalOpacity
+        {
+            get => _downloadSignalOpacity;
+            set => SetProperty(ref _downloadSignalOpacity, value);
+        }
+
+        public bool ShowSpeed => _displayMode != "usage" && _displayMode != MinimalDisplayMode;
         public bool ShowUsage => _displayMode == "usage";
+        public bool IsMinimalMode => _displayMode == MinimalDisplayMode;
 
         private void OnStatsUpdated(NetworkStats stats)
         {
+            UpdateSignalBreathing(stats.DownloadSpeed, stats.UploadSpeed);
+
             if (!_totalsInitialized)
             {
                 _displayedTotalDown = stats.TotalDownload;
@@ -330,6 +395,7 @@ namespace FlowWatch.ViewModels
                 var downBrush = ColorGradient.GetSpeedBrush(downSpeed, maxMbps);
                 DownloadColor = downBrush;
                 DownloadLabelColor = downBrush;
+                DownloadSignalColor = downBrush;
             }
 
             if (upColorQ != _lastUpColorQ)
@@ -338,7 +404,139 @@ namespace FlowWatch.ViewModels
                 var upBrush = ColorGradient.GetSpeedBrush(upSpeed, maxMbps);
                 UploadColor = upBrush;
                 UploadLabelColor = upBrush;
+                UploadSignalColor = upBrush;
             }
+        }
+
+        private void UpdateSignalBreathing(double downSpeed, double upSpeed)
+        {
+            UpdateSignalTarget(_downloadBreath, downSpeed);
+            UpdateSignalTarget(_uploadBreath, upSpeed);
+
+            if (IsMinimalMode && HasActiveBreathing())
+                EnsureSignalRendering();
+        }
+
+        private void UpdateSignalTarget(SignalBreathState state, double speed)
+        {
+            if (!state.RawSpeedInitialized)
+            {
+                state.LastRawSpeed = speed;
+                state.RawSpeedInitialized = true;
+                return;
+            }
+
+            double speedDelta = Math.Abs(speed - state.LastRawSpeed);
+            state.LastRawSpeed = speed;
+
+            if (!IsMinimalMode || speedDelta < SignalBreathMinDelta)
+                return;
+
+            var settings = SettingsService.Instance.Settings;
+            double maxBytesPerSecond = Math.Max(1, settings.SpeedColorMaxMbps) * 1_000_000.0 / 8.0;
+            double scale = Math.Max(128 * 1024.0, maxBytesPerSecond / 8.0);
+            double normalized = Math.Min(1.0, Math.Max(0.0, speedDelta / scale));
+            double energy = 0.35 + 0.65 * normalized;
+            state.TargetEnergy = Math.Max(state.TargetEnergy, energy);
+        }
+
+        private void EnsureSignalRendering()
+        {
+            if (_signalRenderingSubscribed)
+                return;
+
+            _downloadBreath.LastRenderTick = 0;
+            _uploadBreath.LastRenderTick = 0;
+            CompositionTarget.Rendering += OnSignalRendering;
+            _signalRenderingSubscribed = true;
+        }
+
+        private void StopSignalRendering()
+        {
+            if (!_signalRenderingSubscribed)
+                return;
+
+            CompositionTarget.Rendering -= OnSignalRendering;
+            _signalRenderingSubscribed = false;
+        }
+
+        private void OnSignalRendering(object sender, EventArgs e)
+        {
+            bool downloadActive = UpdateSignalFrame(
+                _downloadBreath,
+                value => DownloadSignalOpacity = value);
+            bool uploadActive = UpdateSignalFrame(
+                _uploadBreath,
+                value => UploadSignalOpacity = value);
+
+            if (!IsMinimalMode || (!downloadActive && !uploadActive))
+                StopSignalRendering();
+        }
+
+        private bool UpdateSignalFrame(SignalBreathState state, Action<double> setOpacity)
+        {
+            long now = Stopwatch.GetTimestamp();
+            if (state.LastRenderTick == 0)
+            {
+                state.LastRenderTick = now;
+                return IsBreathingActive(state);
+            }
+
+            double elapsedSeconds = (now - state.LastRenderTick) / (double)Stopwatch.Frequency;
+            state.LastRenderTick = now;
+            elapsedSeconds = Math.Max(0.0, Math.Min(0.08, elapsedSeconds));
+
+            state.TargetEnergy *= Math.Exp(-elapsedSeconds / 0.7);
+            if (state.TargetEnergy < SignalEnergyEpsilon)
+                state.TargetEnergy = 0;
+
+            double responseSeconds = state.TargetEnergy > state.CurrentEnergy ? 0.12 : 0.55;
+            double alpha = 1.0 - Math.Exp(-elapsedSeconds / responseSeconds);
+            state.CurrentEnergy += (state.TargetEnergy - state.CurrentEnergy) * alpha;
+            if (state.CurrentEnergy < SignalEnergyEpsilon && state.TargetEnergy <= 0)
+                state.CurrentEnergy = 0;
+
+            if (state.CurrentEnergy <= 0)
+            {
+                setOpacity(1.0);
+                return false;
+            }
+
+            double frequencyHz = 0.85 + 1.45 * state.CurrentEnergy;
+            state.Phase = (state.Phase + elapsedSeconds * frequencyHz * Math.PI * 2.0) % (Math.PI * 2.0);
+
+            double breath = (1.0 - Math.Cos(state.Phase)) / 2.0;
+            double opacity = 1.0 - breath;
+
+            setOpacity(Math.Max(0.0, Math.Min(1.0, opacity)));
+            return true;
+        }
+
+        private bool HasActiveBreathing()
+        {
+            return IsBreathingActive(_downloadBreath) || IsBreathingActive(_uploadBreath);
+        }
+
+        private static bool IsBreathingActive(SignalBreathState state)
+        {
+            return state.TargetEnergy > SignalEnergyEpsilon || state.CurrentEnergy > SignalEnergyEpsilon;
+        }
+
+        private void ResetSignalBreathing()
+        {
+            StopSignalRendering();
+            ResetSignalBreathVisual(_downloadBreath);
+            ResetSignalBreathVisual(_uploadBreath);
+            DownloadSignalOpacity = 1.0;
+            UploadSignalOpacity = 1.0;
+        }
+
+        private static void ResetSignalBreathVisual(SignalBreathState state)
+        {
+            state.CurrentEnergy = 0;
+            state.TargetEnergy = 0;
+            state.LastRenderTick = 0;
+            state.Phase = 0;
         }
 
         private void OnSettingsChanged()
@@ -354,11 +552,14 @@ namespace FlowWatch.ViewModels
             FontSize = Math.Max(11, Math.Min(19, s.FontSize));
             IsVertical = s.Layout == "vertical";
             IsLocked = s.LockOnTop;
-            DisplayMode = s.DisplayMode ?? "speed";
+            DisplayMode = s.DisplayMode;
 
             _smoothTransition = s.SmoothTransition;
             // Animation completes exactly as the next sample arrives
             _animationDurationMs = s.RefreshInterval;
+            _lastRenderedKey = null;
+            _lastDownColorQ = -1;
+            _lastUpColorQ = -1;
 
             if (!_smoothTransition)
             {
@@ -371,11 +572,36 @@ namespace FlowWatch.ViewModels
             }
         }
 
+        private static string NormalizeDisplayMode(string value)
+        {
+            switch (value)
+            {
+                case "speed":
+                case "usage":
+                case "both":
+                case MinimalDisplayMode:
+                    return value;
+                default:
+                    return "speed";
+            }
+        }
+
         public void Cleanup()
         {
             _animationTimer?.Stop();
+            StopSignalRendering();
             NetworkMonitorService.Instance.StatsUpdated -= OnStatsUpdated;
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
+        }
+
+        private sealed class SignalBreathState
+        {
+            public bool RawSpeedInitialized { get; set; }
+            public double LastRawSpeed { get; set; }
+            public double CurrentEnergy { get; set; }
+            public double TargetEnergy { get; set; }
+            public double Phase { get; set; }
+            public long LastRenderTick { get; set; }
         }
     }
 }
