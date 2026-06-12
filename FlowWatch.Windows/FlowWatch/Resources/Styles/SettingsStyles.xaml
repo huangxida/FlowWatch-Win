@@ -637,7 +637,9 @@
                                 BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,0,1,0">
                             <ScrollViewer Style="{StaticResource ModernScrollViewerStyle}" VerticalScrollBarVisibility="Auto">
                                 <StackPanel Margin="16">
-                                    <ContentPresenter Content="{TemplateBinding Tag}" Margin="0,0,0,16"/>
+                                    <ContentPresenter x:Name="TagPresenter"
+                                                      Content="{TemplateBinding Tag}"
+                                                      Margin="0,0,0,16"/>
                                     <TabPanel x:Name="HeaderPanel" IsItemsHost="True"
                                               KeyboardNavigation.TabIndex="1"/>
                                 </StackPanel>
@@ -649,6 +651,12 @@
                                               Margin="26,24"/>
                         </Border>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Tag" Value="{x:Null}">
+                            <Setter TargetName="TagPresenter" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="TagPresenter" Property="Margin" Value="0"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

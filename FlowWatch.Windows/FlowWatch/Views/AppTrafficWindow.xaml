@@ -28,10 +28,6 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="{DynamicResource AppTraffic.Header}" Style="{StaticResource WindowTitleStyle}"/>
-                    <TextBlock Text="{Binding PeriodLabel}" Style="{StaticResource WindowSubtitleStyle}" Margin="0,4,0,0"/>
-                </StackPanel>
                 <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}"
                         BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1"
                         CornerRadius="8" Padding="3" VerticalAlignment="Center">
