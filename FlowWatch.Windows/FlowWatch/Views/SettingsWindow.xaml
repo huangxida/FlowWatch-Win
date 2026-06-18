@@ -274,6 +274,33 @@
                                              Style="{StaticResource SettingsTextBoxStyle}" Margin="12,0,0,0"/>
                                 </Grid>
                             </StackPanel>
+
+                            <Border Style="{StaticResource DividerStyle}" Margin="0,18,0,12"/>
+
+                            <StackPanel Margin="0,0,0,0">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                        <TextBlock Text="{DynamicResource Settings.IndicatorBlinkThreshold}" Style="{StaticResource FieldLabelStyle}"/>
+                                        <TextBlock Text="{DynamicResource Settings.IndicatorBlinkThresholdHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource ValueStyle}" DockPanel.Dock="Right"
+                                               HorizontalAlignment="Right" VerticalAlignment="Top"
+                                               Text="{Binding IndicatorBlinkThresholdMbps, StringFormat={}{0} Mbps}"/>
+                                </DockPanel>
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="96"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider Grid.Column="0" Value="{Binding IndicatorBlinkThresholdMbps}"
+                                            Minimum="1" Maximum="1000" IsSnapToTickEnabled="True"
+                                            TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
+                                            VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding IndicatorBlinkThresholdMbps, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource SettingsTextBoxStyle}" Margin="12,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>
