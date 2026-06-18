@@ -20,6 +20,7 @@ namespace FlowWatch.ViewModels
         private string _fontFamily = "Segoe UI, Microsoft YaHei, sans-serif";
         private int _fontSize = 18;
         private int _speedColorMaxMbps = 100;
+        private int _indicatorBlinkThresholdMbps = 100;
         private bool _smoothTransition = true;
         private bool _suppressPush;
         private string _skippedVersion;
@@ -159,6 +160,16 @@ namespace FlowWatch.ViewModels
             }
         }
 
+        public int IndicatorBlinkThresholdMbps
+        {
+            get => _indicatorBlinkThresholdMbps;
+            set
+            {
+                if (SetProperty(ref _indicatorBlinkThresholdMbps, Math.Max(1, Math.Min(1000, value))))
+                    PushSettings();
+            }
+        }
+
         public bool SmoothTransition
         {
             get => _smoothTransition;
@@ -209,6 +220,7 @@ namespace FlowWatch.ViewModels
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
+            IndicatorBlinkThresholdMbps = s.IndicatorBlinkThresholdMbps;
             SmoothTransition = s.SmoothTransition;
             UpdateSkippedVersion(s.SkippedVersion);
             _suppressPush = false;
@@ -234,6 +246,7 @@ namespace FlowWatch.ViewModels
                 s.FontFamily = _fontFamily;
                 s.FontSize = _fontSize;
                 s.SpeedColorMaxMbps = _speedColorMaxMbps;
+                s.IndicatorBlinkThresholdMbps = _indicatorBlinkThresholdMbps;
                 s.SmoothTransition = _smoothTransition;
             });
 
@@ -260,6 +273,7 @@ namespace FlowWatch.ViewModels
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
+            IndicatorBlinkThresholdMbps = s.IndicatorBlinkThresholdMbps;
             SmoothTransition = s.SmoothTransition;
             _suppressPush = false;
         }

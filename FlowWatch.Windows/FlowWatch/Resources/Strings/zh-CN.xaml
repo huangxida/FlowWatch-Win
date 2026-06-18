@@ -51,6 +51,8 @@
     <sys:String x:Key="Settings.FontSize">字号</sys:String>
     <sys:String x:Key="Settings.ColorMax">颜色上限</sys:String>
     <sys:String x:Key="Settings.ColorMaxHint">速率从白到红渐变的阈值</sys:String>
+    <sys:String x:Key="Settings.IndicatorBlinkThreshold">指示灯闪烁阈值</sys:String>
+    <sys:String x:Key="Settings.IndicatorBlinkThresholdHint">达到该网速时使用最快闪烁，数值越高越不敏感。</sys:String>
     <sys:String x:Key="Settings.TrafficStats">流量统计</sys:String>
     <sys:String x:Key="Settings.TrafficStatsSubtitle">需要重新计数时，重置本地流量统计。</sys:String>
     <sys:String x:Key="Settings.ResetHint">重置后不可恢复，请谨慎操作</sys:String>

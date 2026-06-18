@@ -12,8 +12,11 @@ namespace FlowWatch.ViewModels
     public class OverlayViewModel : ViewModelBase
     {
         private const string MinimalDisplayMode = "minimal";
-        private const double SignalBreathMinDelta = 16 * 1024.0;
-        private const double SignalEnergyEpsilon = 0.004;
+        private const double SignalBlinkMinSpeedBytesPerSecond = 1024.0;
+        private const double SignalIdleOpacity = 0.35;
+        private const double SignalBrightOpacity = 1.0;
+        private const int SignalSlowBlinkMs = 900;
+        private const int SignalFastBlinkMs = 120;
 
         private string _uploadNum = "0";
         private string _uploadUnit = "KB/s";
@@ -37,8 +40,8 @@ namespace FlowWatch.ViewModels
         private Visibility _minimalVisibility = Visibility.Collapsed;
         private Brush _uploadSignalColor = Brushes.White;
         private Brush _downloadSignalColor = Brushes.White;
-        private double _uploadSignalOpacity = 1.0;
-        private double _downloadSignalOpacity = 1.0;
+        private double _uploadSignalOpacity = SignalIdleOpacity;
+        private double _downloadSignalOpacity = SignalIdleOpacity;
 
         // Smooth transition animation state
         private double _displayedDownSpeed, _displayedUpSpeed;
@@ -56,6 +59,7 @@ namespace FlowWatch.ViewModels
         private bool _totalsInitialized;
         private long _lastDownColorQ = -1;
         private long _lastUpColorQ = -1;
+        private int _indicatorBlinkThresholdMbps = 100;
         private bool _signalRenderingSubscribed;
         private readonly SignalBreathState _downloadBreath = new SignalBreathState();
         private readonly SignalBreathState _uploadBreath = new SignalBreathState();
@@ -193,8 +197,10 @@ namespace FlowWatch.ViewModels
                     SecondaryVisibility = mode == "both" ? Visibility.Visible : Visibility.Collapsed;
                     StandardVisibility = isMinimal ? Visibility.Collapsed : Visibility.Visible;
                     MinimalVisibility = isMinimal ? Visibility.Visible : Visibility.Collapsed;
-                    if (!isMinimal)
-                        ResetSignalBreathing();
+                    if (isMinimal)
+                        RefreshSignalBlinking();
+                    else
+                        ResetSignalBlinking();
                     OnPropertyChanged(nameof(ShowSpeed));
                     OnPropertyChanged(nameof(ShowUsage));
                     OnPropertyChanged(nameof(IsMinimalMode));
@@ -250,7 +256,7 @@ namespace FlowWatch.ViewModels
 
         private void OnStatsUpdated(NetworkStats stats)
         {
-            UpdateSignalBreathing(stats.DownloadSpeed, stats.UploadSpeed);
+            UpdateSignalBlinking(stats.DownloadSpeed, stats.UploadSpeed);
 
             if (!_totalsInitialized)
             {
@@ -408,36 +414,33 @@ namespace FlowWatch.ViewModels
             }
         }
 
-        private void UpdateSignalBreathing(double downSpeed, double upSpeed)
+        private void UpdateSignalBlinking(double downSpeed, double upSpeed)
         {
-            UpdateSignalTarget(_downloadBreath, downSpeed);
-            UpdateSignalTarget(_uploadBreath, upSpeed);
+            UpdateSignalTarget(_downloadBreath, downSpeed, value => DownloadSignalOpacity = value);
+            UpdateSignalTarget(_uploadBreath, upSpeed, value => UploadSignalOpacity = value);
 
-            if (IsMinimalMode && HasActiveBreathing())
+            if (IsMinimalMode && HasActiveBlinking())
                 EnsureSignalRendering();
+            else if (!HasActiveBlinking())
+                StopSignalRendering();
         }
 
-        private void UpdateSignalTarget(SignalBreathState state, double speed)
+        private void UpdateSignalTarget(SignalBreathState state, double speed, Action<double> setOpacity)
         {
-            if (!state.RawSpeedInitialized)
+            state.LastRawSpeed = speed;
+            state.RawSpeedInitialized = true;
+
+            if (!IsMinimalMode || speed < SignalBlinkMinSpeedBytesPerSecond)
             {
-                state.LastRawSpeed = speed;
-                state.RawSpeedInitialized = true;
+                ResetSignalBlinkVisual(state);
+                setOpacity(IsMinimalMode ? SignalIdleOpacity : SignalBrightOpacity);
                 return;
             }
 
-            double speedDelta = Math.Abs(speed - state.LastRawSpeed);
-            state.LastRawSpeed = speed;
-
-            if (!IsMinimalMode || speedDelta < SignalBreathMinDelta)
-                return;
-
-            var settings = SettingsService.Instance.Settings;
-            double maxBytesPerSecond = Math.Max(1, settings.SpeedColorMaxMbps) * 1_000_000.0 / 8.0;
-            double scale = Math.Max(128 * 1024.0, maxBytesPerSecond / 8.0);
-            double normalized = Math.Min(1.0, Math.Max(0.0, speedDelta / scale));
-            double energy = 0.35 + 0.65 * normalized;
-            state.TargetEnergy = Math.Max(state.TargetEnergy, energy);
+            state.Active = true;
+            state.BlinkIntervalSeconds = GetSignalBlinkIntervalMs(speed) / 1000.0;
+            if (state.LastRenderTick == 0)
+                setOpacity(SignalBrightOpacity);
         }
 
         private void EnsureSignalRendering()
@@ -475,68 +478,85 @@ namespace FlowWatch.ViewModels
 
         private bool UpdateSignalFrame(SignalBreathState state, Action<double> setOpacity)
         {
+            if (!state.Active)
+            {
+                setOpacity(IsMinimalMode ? SignalIdleOpacity : SignalBrightOpacity);
+                return false;
+            }
+
             long now = Stopwatch.GetTimestamp();
             if (state.LastRenderTick == 0)
             {
                 state.LastRenderTick = now;
-                return IsBreathingActive(state);
+                setOpacity(SignalBrightOpacity);
+                return true;
             }
 
             double elapsedSeconds = (now - state.LastRenderTick) / (double)Stopwatch.Frequency;
             state.LastRenderTick = now;
             elapsedSeconds = Math.Max(0.0, Math.Min(0.08, elapsedSeconds));
 
-            state.TargetEnergy *= Math.Exp(-elapsedSeconds / 0.7);
-            if (state.TargetEnergy < SignalEnergyEpsilon)
-                state.TargetEnergy = 0;
+            double blinkIntervalSeconds = Math.Max(SignalFastBlinkMs / 1000.0, state.BlinkIntervalSeconds);
+            state.Phase = (state.Phase + elapsedSeconds * Math.PI / blinkIntervalSeconds) % (Math.PI * 2.0);
 
-            double responseSeconds = state.TargetEnergy > state.CurrentEnergy ? 0.12 : 0.55;
-            double alpha = 1.0 - Math.Exp(-elapsedSeconds / responseSeconds);
-            state.CurrentEnergy += (state.TargetEnergy - state.CurrentEnergy) * alpha;
-            if (state.CurrentEnergy < SignalEnergyEpsilon && state.TargetEnergy <= 0)
-                state.CurrentEnergy = 0;
-
-            if (state.CurrentEnergy <= 0)
-            {
-                setOpacity(1.0);
-                return false;
-            }
-
-            double frequencyHz = 0.85 + 1.45 * state.CurrentEnergy;
-            state.Phase = (state.Phase + elapsedSeconds * frequencyHz * Math.PI * 2.0) % (Math.PI * 2.0);
-
-            double breath = (1.0 - Math.Cos(state.Phase)) / 2.0;
-            double opacity = 1.0 - breath;
+            double brightness = (1.0 + Math.Cos(state.Phase)) / 2.0;
+            double opacity = SignalIdleOpacity + (SignalBrightOpacity - SignalIdleOpacity) * brightness;
 
             setOpacity(Math.Max(0.0, Math.Min(1.0, opacity)));
             return true;
         }
 
-        private bool HasActiveBreathing()
+        private void RefreshSignalBlinking()
         {
-            return IsBreathingActive(_downloadBreath) || IsBreathingActive(_uploadBreath);
+            if (_downloadBreath.RawSpeedInitialized)
+                UpdateSignalTarget(_downloadBreath, _downloadBreath.LastRawSpeed, value => DownloadSignalOpacity = value);
+            else
+                DownloadSignalOpacity = IsMinimalMode ? SignalIdleOpacity : SignalBrightOpacity;
+
+            if (_uploadBreath.RawSpeedInitialized)
+                UpdateSignalTarget(_uploadBreath, _uploadBreath.LastRawSpeed, value => UploadSignalOpacity = value);
+            else
+                UploadSignalOpacity = IsMinimalMode ? SignalIdleOpacity : SignalBrightOpacity;
+
+            if (IsMinimalMode && HasActiveBlinking())
+                EnsureSignalRendering();
+            else if (!HasActiveBlinking())
+                StopSignalRendering();
         }
 
-        private static bool IsBreathingActive(SignalBreathState state)
+        private double GetSignalBlinkIntervalMs(double bytesPerSecond)
         {
-            return state.TargetEnergy > SignalEnergyEpsilon || state.CurrentEnergy > SignalEnergyEpsilon;
+            double mbps = bytesPerSecond * 8.0 / 1_000_000.0;
+            double threshold = Math.Max(1, _indicatorBlinkThresholdMbps);
+            double ratio = Math.Min(1.0, Math.Max(0.0, mbps / threshold));
+            return SignalSlowBlinkMs - (SignalSlowBlinkMs - SignalFastBlinkMs) * ratio;
         }
 
-        private void ResetSignalBreathing()
+        private bool HasActiveBlinking()
+        {
+            return IsSignalBlinkingActive(_downloadBreath) || IsSignalBlinkingActive(_uploadBreath);
+        }
+
+        private static bool IsSignalBlinkingActive(SignalBreathState state)
+        {
+            return state.Active;
+        }
+
+        private void ResetSignalBlinking()
         {
             StopSignalRendering();
-            ResetSignalBreathVisual(_downloadBreath);
-            ResetSignalBreathVisual(_uploadBreath);
-            DownloadSignalOpacity = 1.0;
-            UploadSignalOpacity = 1.0;
+            ResetSignalBlinkVisual(_downloadBreath);
+            ResetSignalBlinkVisual(_uploadBreath);
+            DownloadSignalOpacity = SignalBrightOpacity;
+            UploadSignalOpacity = SignalBrightOpacity;
         }
 
-        private static void ResetSignalBreathVisual(SignalBreathState state)
+        private static void ResetSignalBlinkVisual(SignalBreathState state)
         {
-            state.CurrentEnergy = 0;
-            state.TargetEnergy = 0;
+            state.Active = false;
             state.LastRenderTick = 0;
             state.Phase = 0;
+            state.BlinkIntervalSeconds = SignalSlowBlinkMs / 1000.0;
         }
 
         private void OnSettingsChanged()
@@ -555,11 +575,13 @@ namespace FlowWatch.ViewModels
             DisplayMode = s.DisplayMode;
 
             _smoothTransition = s.SmoothTransition;
+            _indicatorBlinkThresholdMbps = Math.Max(1, Math.Min(1000, s.IndicatorBlinkThresholdMbps));
             // Animation completes exactly as the next sample arrives
             _animationDurationMs = s.RefreshInterval;
             _lastRenderedKey = null;
             _lastDownColorQ = -1;
             _lastUpColorQ = -1;
+            RefreshSignalBlinking();
 
             if (!_smoothTransition)
             {
@@ -596,10 +618,10 @@ namespace FlowWatch.ViewModels
 
         private sealed class SignalBreathState
         {
+            public bool Active { get; set; }
             public bool RawSpeedInitialized { get; set; }
             public double LastRawSpeed { get; set; }
-            public double CurrentEnergy { get; set; }
-            public double TargetEnergy { get; set; }
+            public double BlinkIntervalSeconds { get; set; } = SignalSlowBlinkMs / 1000.0;
             public double Phase { get; set; }
             public long LastRenderTick { get; set; }
         }

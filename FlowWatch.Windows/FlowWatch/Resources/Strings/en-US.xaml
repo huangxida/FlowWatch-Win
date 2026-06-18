@@ -51,6 +51,8 @@
     <sys:String x:Key="Settings.FontSize">Font Size</sys:String>
     <sys:String x:Key="Settings.ColorMax">Color Max</sys:String>
     <sys:String x:Key="Settings.ColorMaxHint">Threshold for white-to-red speed gradient</sys:String>
+    <sys:String x:Key="Settings.IndicatorBlinkThreshold">Indicator Blink Threshold</sys:String>
+    <sys:String x:Key="Settings.IndicatorBlinkThresholdHint">Speed that maps to the fastest indicator blink. Higher values make blinking less sensitive.</sys:String>
     <sys:String x:Key="Settings.TrafficStats">Traffic Statistics</sys:String>
     <sys:String x:Key="Settings.TrafficStatsSubtitle">Reset local traffic counters when you need a fresh baseline.</sys:String>
     <sys:String x:Key="Settings.ResetHint">This action cannot be undone</sys:String>

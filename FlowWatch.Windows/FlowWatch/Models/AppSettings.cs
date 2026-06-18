@@ -9,6 +9,7 @@ namespace FlowWatch.Models
         public int FontSize { get; set; } = 18;
         public string Layout { get; set; } = "horizontal";
         public int SpeedColorMaxMbps { get; set; } = 100;
+        public int IndicatorBlinkThresholdMbps { get; set; } = 100;
         public string DisplayMode { get; set; } = "speed";
         public double? OverlayX { get; set; }
         public double? OverlayY { get; set; }
