@@ -5,10 +5,10 @@ namespace FlowWatch.Helpers
         private static readonly string[] SpeedUnits = { "KB/s", "MB/s", "GB/s" };
         private static readonly string[] UsageUnits = { "KB", "MB", "GB", "TB" };
 
-        public static (string Num, string Unit) FormatSpeed(double bytesPerSecond)
+        public static (string Num, string Unit) FormatSpeed(double bytesPerSecond, bool alwaysShowDecimal = false)
         {
             if (bytesPerSecond < 1024)
-                return ("0", "KB/s");
+                return (FormatZero(alwaysShowDecimal), "KB/s");
 
             double value = bytesPerSecond / 1024;
             int idx = 0;
@@ -18,14 +18,14 @@ namespace FlowWatch.Helpers
                 idx++;
             }
 
-            string num = value >= 10 ? value.ToString("F0") : value.ToString("F1");
+            string num = FormatNumber(value, alwaysShowDecimal);
             return (num, SpeedUnits[idx]);
         }
 
-        public static (string Num, string Unit) FormatUsage(long bytes)
+        public static (string Num, string Unit) FormatUsage(long bytes, bool alwaysShowDecimal = false)
         {
             if (bytes < 1024)
-                return ("0", "KB");
+                return (FormatZero(alwaysShowDecimal), "KB");
 
             double value = bytes / 1024.0;
             int idx = 0;
@@ -35,8 +35,20 @@ namespace FlowWatch.Helpers
                 idx++;
             }
 
-            string num = value >= 10 ? value.ToString("F0") : value.ToString("F1");
+            string num = FormatNumber(value, alwaysShowDecimal);
             return (num, UsageUnits[idx]);
+        }
+
+        private static string FormatZero(bool alwaysShowDecimal)
+        {
+            return alwaysShowDecimal ? "0.0" : "0";
+        }
+
+        private static string FormatNumber(double value, bool alwaysShowDecimal)
+        {
+            return alwaysShowDecimal || value < 10
+                ? value.ToString("F1")
+                : value.ToString("F0");
         }
     }
 }
