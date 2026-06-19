@@ -13,8 +13,9 @@ namespace FlowWatch.ViewModels
     {
         private const string MinimalDisplayMode = "minimal";
         private const double SignalBlinkMinSpeedBytesPerSecond = 1024.0;
-        private const double SignalIdleOpacity = 0.35;
+        private const double SignalOffOpacity = 0.0;
         private const double SignalBrightOpacity = 1.0;
+        private const double SignalIntervalSmoothingSeconds = 0.22;
         private const int SignalSlowBlinkMs = 900;
         private const int SignalFastBlinkMs = 120;
 
@@ -40,8 +41,8 @@ namespace FlowWatch.ViewModels
         private Visibility _minimalVisibility = Visibility.Collapsed;
         private Brush _uploadSignalColor = Brushes.White;
         private Brush _downloadSignalColor = Brushes.White;
-        private double _uploadSignalOpacity = SignalIdleOpacity;
-        private double _downloadSignalOpacity = SignalIdleOpacity;
+        private double _uploadSignalOpacity = SignalBrightOpacity;
+        private double _downloadSignalOpacity = SignalBrightOpacity;
 
         // Smooth transition animation state
         private double _displayedDownSpeed, _displayedUpSpeed;
@@ -110,25 +111,41 @@ namespace FlowWatch.ViewModels
         public string UploadUsageNum
         {
             get => _uploadUsageNum;
-            set => SetProperty(ref _uploadUsageNum, value);
+            set
+            {
+                if (SetProperty(ref _uploadUsageNum, value))
+                    OnPropertyChanged(nameof(UploadMinimalUsageText));
+            }
         }
 
         public string UploadUsageUnit
         {
             get => _uploadUsageUnit;
-            set => SetProperty(ref _uploadUsageUnit, value);
+            set
+            {
+                if (SetProperty(ref _uploadUsageUnit, value))
+                    OnPropertyChanged(nameof(UploadMinimalUsageText));
+            }
         }
 
         public string DownloadUsageNum
         {
             get => _downloadUsageNum;
-            set => SetProperty(ref _downloadUsageNum, value);
+            set
+            {
+                if (SetProperty(ref _downloadUsageNum, value))
+                    OnPropertyChanged(nameof(DownloadMinimalUsageText));
+            }
         }
 
         public string DownloadUsageUnit
         {
             get => _downloadUsageUnit;
-            set => SetProperty(ref _downloadUsageUnit, value);
+            set
+            {
+                if (SetProperty(ref _downloadUsageUnit, value))
+                    OnPropertyChanged(nameof(DownloadMinimalUsageText));
+            }
         }
 
         public Brush UploadColor
@@ -253,6 +270,13 @@ namespace FlowWatch.ViewModels
         public bool ShowSpeed => _displayMode != "usage" && _displayMode != MinimalDisplayMode;
         public bool ShowUsage => _displayMode == "usage";
         public bool IsMinimalMode => _displayMode == MinimalDisplayMode;
+        public string UploadMinimalUsageText => FormatMinimalUsageText(_uploadUsageNum, _uploadUsageUnit);
+        public string DownloadMinimalUsageText => FormatMinimalUsageText(_downloadUsageNum, _downloadUsageUnit);
+
+        private static string FormatMinimalUsageText(string num, string unit)
+        {
+            return $"{num,4} {unit}";
+        }
 
         private void OnStatsUpdated(NetworkStats stats)
         {
@@ -401,7 +425,7 @@ namespace FlowWatch.ViewModels
                 var downBrush = ColorGradient.GetSpeedBrush(downSpeed, maxMbps);
                 DownloadColor = downBrush;
                 DownloadLabelColor = downBrush;
-                DownloadSignalColor = downBrush;
+                DownloadSignalColor = GetSignalBrush(_downloadBreath, downBrush);
             }
 
             if (upColorQ != _lastUpColorQ)
@@ -410,14 +434,22 @@ namespace FlowWatch.ViewModels
                 var upBrush = ColorGradient.GetSpeedBrush(upSpeed, maxMbps);
                 UploadColor = upBrush;
                 UploadLabelColor = upBrush;
-                UploadSignalColor = upBrush;
+                UploadSignalColor = GetSignalBrush(_uploadBreath, upBrush);
             }
         }
 
         private void UpdateSignalBlinking(double downSpeed, double upSpeed)
         {
-            UpdateSignalTarget(_downloadBreath, downSpeed, value => DownloadSignalOpacity = value);
-            UpdateSignalTarget(_uploadBreath, upSpeed, value => UploadSignalOpacity = value);
+            UpdateSignalTarget(
+                _downloadBreath,
+                downSpeed,
+                value => DownloadSignalOpacity = value,
+                value => DownloadSignalColor = value);
+            UpdateSignalTarget(
+                _uploadBreath,
+                upSpeed,
+                value => UploadSignalOpacity = value,
+                value => UploadSignalColor = value);
 
             if (IsMinimalMode && HasActiveBlinking())
                 EnsureSignalRendering();
@@ -425,7 +457,11 @@ namespace FlowWatch.ViewModels
                 StopSignalRendering();
         }
 
-        private void UpdateSignalTarget(SignalBreathState state, double speed, Action<double> setOpacity)
+        private void UpdateSignalTarget(
+            SignalBreathState state,
+            double speed,
+            Action<double> setOpacity,
+            Action<Brush> setColor)
         {
             state.LastRawSpeed = speed;
             state.RawSpeedInitialized = true;
@@ -433,12 +469,24 @@ namespace FlowWatch.ViewModels
             if (!IsMinimalMode || speed < SignalBlinkMinSpeedBytesPerSecond)
             {
                 ResetSignalBlinkVisual(state);
-                setOpacity(IsMinimalMode ? SignalIdleOpacity : SignalBrightOpacity);
+                setColor(Brushes.White);
+                setOpacity(SignalBrightOpacity);
                 return;
             }
 
-            state.Active = true;
-            state.BlinkIntervalSeconds = GetSignalBlinkIntervalMs(speed) / 1000.0;
+            double targetIntervalSeconds = GetSignalBlinkIntervalMs(speed) / 1000.0;
+            if (!state.Active)
+            {
+                state.Active = true;
+                state.CurrentBlinkIntervalSeconds = targetIntervalSeconds;
+                state.TargetBlinkIntervalSeconds = targetIntervalSeconds;
+            }
+            else
+            {
+                state.TargetBlinkIntervalSeconds = targetIntervalSeconds;
+            }
+
+            setColor(ColorGradient.GetSpeedBrush(speed, SettingsService.Instance.Settings.SpeedColorMaxMbps));
             if (state.LastRenderTick == 0)
                 setOpacity(SignalBrightOpacity);
         }
@@ -480,7 +528,7 @@ namespace FlowWatch.ViewModels
         {
             if (!state.Active)
             {
-                setOpacity(IsMinimalMode ? SignalIdleOpacity : SignalBrightOpacity);
+                setOpacity(SignalBrightOpacity);
                 return false;
             }
 
@@ -496,11 +544,15 @@ namespace FlowWatch.ViewModels
             state.LastRenderTick = now;
             elapsedSeconds = Math.Max(0.0, Math.Min(0.08, elapsedSeconds));
 
-            double blinkIntervalSeconds = Math.Max(SignalFastBlinkMs / 1000.0, state.BlinkIntervalSeconds);
+            double smoothing = 1.0 - Math.Exp(-elapsedSeconds / SignalIntervalSmoothingSeconds);
+            state.CurrentBlinkIntervalSeconds +=
+                (state.TargetBlinkIntervalSeconds - state.CurrentBlinkIntervalSeconds) * smoothing;
+
+            double blinkIntervalSeconds = Math.Max(SignalFastBlinkMs / 1000.0, state.CurrentBlinkIntervalSeconds);
             state.Phase = (state.Phase + elapsedSeconds * Math.PI / blinkIntervalSeconds) % (Math.PI * 2.0);
 
             double brightness = (1.0 + Math.Cos(state.Phase)) / 2.0;
-            double opacity = SignalIdleOpacity + (SignalBrightOpacity - SignalIdleOpacity) * brightness;
+            double opacity = SignalOffOpacity + (SignalBrightOpacity - SignalOffOpacity) * brightness;
 
             setOpacity(Math.Max(0.0, Math.Min(1.0, opacity)));
             return true;
@@ -509,14 +561,32 @@ namespace FlowWatch.ViewModels
         private void RefreshSignalBlinking()
         {
             if (_downloadBreath.RawSpeedInitialized)
-                UpdateSignalTarget(_downloadBreath, _downloadBreath.LastRawSpeed, value => DownloadSignalOpacity = value);
+            {
+                UpdateSignalTarget(
+                    _downloadBreath,
+                    _downloadBreath.LastRawSpeed,
+                    value => DownloadSignalOpacity = value,
+                    value => DownloadSignalColor = value);
+            }
             else
-                DownloadSignalOpacity = IsMinimalMode ? SignalIdleOpacity : SignalBrightOpacity;
+            {
+                DownloadSignalColor = Brushes.White;
+                DownloadSignalOpacity = SignalBrightOpacity;
+            }
 
             if (_uploadBreath.RawSpeedInitialized)
-                UpdateSignalTarget(_uploadBreath, _uploadBreath.LastRawSpeed, value => UploadSignalOpacity = value);
+            {
+                UpdateSignalTarget(
+                    _uploadBreath,
+                    _uploadBreath.LastRawSpeed,
+                    value => UploadSignalOpacity = value,
+                    value => UploadSignalColor = value);
+            }
             else
-                UploadSignalOpacity = IsMinimalMode ? SignalIdleOpacity : SignalBrightOpacity;
+            {
+                UploadSignalColor = Brushes.White;
+                UploadSignalOpacity = SignalBrightOpacity;
+            }
 
             if (IsMinimalMode && HasActiveBlinking())
                 EnsureSignalRendering();
@@ -530,6 +600,11 @@ namespace FlowWatch.ViewModels
             double threshold = Math.Max(1, _indicatorBlinkThresholdMbps);
             double ratio = Math.Min(1.0, Math.Max(0.0, mbps / threshold));
             return SignalSlowBlinkMs - (SignalSlowBlinkMs - SignalFastBlinkMs) * ratio;
+        }
+
+        private Brush GetSignalBrush(SignalBreathState state, Brush speedBrush)
+        {
+            return IsMinimalMode && !state.Active ? Brushes.White : speedBrush;
         }
 
         private bool HasActiveBlinking()
@@ -547,6 +622,8 @@ namespace FlowWatch.ViewModels
             StopSignalRendering();
             ResetSignalBlinkVisual(_downloadBreath);
             ResetSignalBlinkVisual(_uploadBreath);
+            DownloadSignalColor = Brushes.White;
+            UploadSignalColor = Brushes.White;
             DownloadSignalOpacity = SignalBrightOpacity;
             UploadSignalOpacity = SignalBrightOpacity;
         }
@@ -556,7 +633,8 @@ namespace FlowWatch.ViewModels
             state.Active = false;
             state.LastRenderTick = 0;
             state.Phase = 0;
-            state.BlinkIntervalSeconds = SignalSlowBlinkMs / 1000.0;
+            state.CurrentBlinkIntervalSeconds = SignalSlowBlinkMs / 1000.0;
+            state.TargetBlinkIntervalSeconds = SignalSlowBlinkMs / 1000.0;
         }
 
         private void OnSettingsChanged()
@@ -621,7 +699,8 @@ namespace FlowWatch.ViewModels
             public bool Active { get; set; }
             public bool RawSpeedInitialized { get; set; }
             public double LastRawSpeed { get; set; }
-            public double BlinkIntervalSeconds { get; set; } = SignalSlowBlinkMs / 1000.0;
+            public double CurrentBlinkIntervalSeconds { get; set; } = SignalSlowBlinkMs / 1000.0;
+            public double TargetBlinkIntervalSeconds { get; set; } = SignalSlowBlinkMs / 1000.0;
             public double Phase { get; set; }
             public long LastRenderTick { get; set; }
         }

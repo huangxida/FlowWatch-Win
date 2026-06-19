@@ -192,53 +192,40 @@
         </StackPanel>
 
         <!-- Minimal layout -->
-        <StackPanel x:Name="MinimalLayout" Orientation="Vertical"
-                    Visibility="{Binding MinimalVisibility}">
+        <Grid x:Name="MinimalLayout"
+              Visibility="{Binding MinimalVisibility}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
             <!-- Upload row -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Ellipse Grid.Column="0" Width="10" Height="10"
-                         Fill="{Binding UploadSignalColor}"
-                         Opacity="{Binding UploadSignalOpacity}"
-                         Effect="{StaticResource OverlayTextShadow}"
-                         VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal"
-                            HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding UploadUsageNum}" Style="{StaticResource NumStyle}"
-                               Foreground="{Binding UploadColor}"
-                               FontFamily="{Binding FontFamily}" FontSize="{Binding MinimalFontSize}"/>
-                    <TextBlock Text="{Binding UploadUsageUnit}" Style="{StaticResource UnitStyle}"
-                               Foreground="{Binding UploadColor}"
-                               FontFamily="{Binding FontFamily}" FontSize="{Binding MinimalFontSize}"
-                               Margin="2,0,0,0"/>
-                </StackPanel>
-            </Grid>
+            <Ellipse Grid.Row="0" Grid.Column="0" Width="10" Height="10"
+                     Fill="{Binding UploadSignalColor}"
+                     Opacity="{Binding UploadSignalOpacity}"
+                     Effect="{StaticResource OverlayTextShadow}"
+                     VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding UploadMinimalUsageText}" Style="{StaticResource NumStyle}"
+                       Foreground="{Binding UploadColor}"
+                       FontFamily="{Binding FontFamily}"
+                       FontSize="{Binding MinimalFontSize}"
+                       MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right"/>
 
             <!-- Download row -->
-            <Grid Margin="0,1,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Ellipse Grid.Column="0" Width="10" Height="10"
-                         Fill="{Binding DownloadSignalColor}"
-                         Opacity="{Binding DownloadSignalOpacity}"
-                         Effect="{StaticResource OverlayTextShadow}"
-                         VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal"
-                            HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding DownloadUsageNum}" Style="{StaticResource NumStyle}"
-                               Foreground="{Binding DownloadColor}"
-                               FontFamily="{Binding FontFamily}" FontSize="{Binding MinimalFontSize}"/>
-                    <TextBlock Text="{Binding DownloadUsageUnit}" Style="{StaticResource UnitStyle}"
-                               Foreground="{Binding DownloadColor}"
-                               FontFamily="{Binding FontFamily}" FontSize="{Binding MinimalFontSize}"
-                               Margin="2,0,0,0"/>
-                </StackPanel>
-            </Grid>
-        </StackPanel>
+            <Ellipse Grid.Row="1" Grid.Column="0" Width="10" Height="10"
+                     Fill="{Binding DownloadSignalColor}"
+                     Opacity="{Binding DownloadSignalOpacity}"
+                     Effect="{StaticResource OverlayTextShadow}"
+                     VerticalAlignment="Center" Margin="0,1,5,0"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DownloadMinimalUsageText}" Style="{StaticResource NumStyle}"
+                       Foreground="{Binding DownloadColor}"
+                       FontFamily="{Binding FontFamily}"
+                       FontSize="{Binding MinimalFontSize}"
+                       MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right" Margin="0,1,0,0"/>
+        </Grid>
     </Grid>
 </Window>
