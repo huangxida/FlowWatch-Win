@@ -19,13 +19,13 @@ namespace FlowWatch.ViewModels
         private const int SignalSlowBlinkMs = 900;
         private const int SignalFastBlinkMs = 120;
 
-        private string _uploadNum = "0";
+        private string _uploadNum = "0.0";
         private string _uploadUnit = "KB/s";
-        private string _downloadNum = "0";
+        private string _downloadNum = "0.0";
         private string _downloadUnit = "KB/s";
-        private string _uploadUsageNum = "0";
+        private string _uploadUsageNum = "0.0";
         private string _uploadUsageUnit = "KB";
-        private string _downloadUsageNum = "0";
+        private string _downloadUsageNum = "0.0";
         private string _downloadUsageUnit = "KB";
         private Brush _uploadColor = Brushes.White;
         private Brush _downloadColor = Brushes.White;
@@ -367,10 +367,10 @@ namespace FlowWatch.ViewModels
 
         private string BuildRenderKey(double downSpeed, double upSpeed, long totalDown, long totalUp)
         {
-            var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed);
-            var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed);
-            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown);
-            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp);
+            var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed, alwaysShowDecimal: true);
+            var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed, alwaysShowDecimal: true);
+            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown, alwaysShowDecimal: true);
+            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp, alwaysShowDecimal: true);
 
             const double colorStep = 262144.0;
             long downColorQ = (long)(downSpeed / colorStep);
@@ -384,10 +384,10 @@ namespace FlowWatch.ViewModels
             var settings = SettingsService.Instance.Settings;
             int maxMbps = settings.SpeedColorMaxMbps;
 
-            var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed);
-            var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed);
-            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown);
-            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp);
+            var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed, alwaysShowDecimal: true);
+            var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed, alwaysShowDecimal: true);
+            var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown, alwaysShowDecimal: true);
+            var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp, alwaysShowDecimal: true);
 
             const double colorStep = 262144.0;
             long downColorQ = (long)(downSpeed / colorStep);
