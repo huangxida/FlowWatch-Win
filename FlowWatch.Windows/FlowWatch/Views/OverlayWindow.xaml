@@ -1,6 +1,7 @@
 <Window x:Class="FlowWatch.Views.OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:FlowWatch.Controls"
         xmlns:vm="clr-namespace:FlowWatch.ViewModels"
         Title="FlowWatch Overlay"
         SizeToContent="WidthAndHeight"
@@ -221,6 +222,37 @@
                      Opacity="{Binding DownloadSignalOpacity}"
                      Effect="{StaticResource OverlayTextShadow}"
                      VerticalAlignment="Center" Margin="0,1,5,0"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DownloadMinimalUsageText}" Style="{StaticResource NumStyle}"
+                       Foreground="{Binding DownloadColor}"
+                       FontFamily="{Binding FontFamily}"
+                       FontSize="{Binding MinimalFontSize}"
+                       MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right" Margin="0,1,0,0"/>
+        </Grid>
+
+        <!-- Animated usage layout -->
+        <Grid x:Name="SpiralLayout"
+              Visibility="{Binding SpiralVisibility}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <controls:MathCurveLoaderElement Width="36" Height="36"
+                                             Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                                             CurveKey="{Binding ActiveOverlayAnimationKey}"
+                                             MotionRatio="{Binding SpiralMotionRatio}"
+                                             SpiralBrush="{Binding SpiralColor}"
+                                             Effect="{StaticResource OverlayTextShadow}"
+                                             VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding UploadMinimalUsageText}" Style="{StaticResource NumStyle}"
+                       Foreground="{Binding UploadColor}"
+                       FontFamily="{Binding FontFamily}"
+                       FontSize="{Binding MinimalFontSize}"
+                       MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right"/>
             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DownloadMinimalUsageText}" Style="{StaticResource NumStyle}"
                        Foreground="{Binding DownloadColor}"
                        FontFamily="{Binding FontFamily}"

@@ -11,6 +11,7 @@ namespace FlowWatch.Models
         public int SpeedColorMaxMbps { get; set; } = 100;
         public int IndicatorBlinkThresholdMbps { get; set; } = 100;
         public string DisplayMode { get; set; } = "speed";
+        public string OverlayAnimationKey { get; set; } = "three-petal-spiral";
         public double? OverlayX { get; set; }
         public double? OverlayY { get; set; }
         public bool AutoLaunch { get; set; } = true;

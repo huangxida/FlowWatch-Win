@@ -181,6 +181,7 @@
                                     <ComboBoxItem Content="{DynamicResource Settings.DisplayUsage}" Tag="usage"/>
                                     <ComboBoxItem Content="{DynamicResource Settings.DisplayBoth}" Tag="both"/>
                                     <ComboBoxItem Content="{DynamicResource Settings.DisplayMinimal}" Tag="minimal"/>
+                                    <ComboBoxItem Content="{DynamicResource Settings.DisplaySpiral}" Tag="spiral"/>
                                 </ComboBox>
                             </DockPanel>
 
@@ -276,6 +277,34 @@
                             </StackPanel>
 
                             <Border Style="{StaticResource DividerStyle}" Margin="0,18,0,12"/>
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="24"/>
+                                    <ColumnDefinition Width="220"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource Settings.LeftAnimation}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.LeftAnimationHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="2"
+                                          ItemsSource="{Binding OverlayAnimationOptions}"
+                                          SelectedValue="{Binding OverlayAnimationKey}"
+                                          SelectedValuePath="Key"
+                                          TextSearch.TextPath="DisplayName"
+                                          Style="{StaticResource SettingsComboBoxStyle}"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Center">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </Grid>
+
+                            <Border Style="{StaticResource DividerStyle}" Margin="0,4,0,12"/>
 
                             <StackPanel Margin="0,0,0,0">
                                 <DockPanel>
