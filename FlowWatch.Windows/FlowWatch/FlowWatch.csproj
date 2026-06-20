@@ -100,9 +100,11 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\MathCurveLoaderElement.cs" />
     <Compile Include="Helpers\ColorGradient.cs" />
     <Compile Include="Helpers\FontHelper.cs" />
     <Compile Include="Helpers\FormatHelper.cs" />
+    <Compile Include="Helpers\MathCurveCatalog.cs" />
     <Compile Include="Helpers\RatioToWidthConverter.cs" />
     <Compile Include="Helpers\NativeInterop.cs" />
     <Compile Include="Helpers\NetworkInterfaceHelper.cs" />

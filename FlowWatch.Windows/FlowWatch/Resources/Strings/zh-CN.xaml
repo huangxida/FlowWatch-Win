@@ -42,6 +42,7 @@
     <sys:String x:Key="Settings.DisplayUsage">流量</sys:String>
     <sys:String x:Key="Settings.DisplayBoth">速率+流量</sys:String>
     <sys:String x:Key="Settings.DisplayMinimal">极简</sys:String>
+    <sys:String x:Key="Settings.DisplaySpiral">动画+今日流量</sys:String>
     <sys:String x:Key="Settings.SmoothTransition">平滑过渡</sys:String>
     <sys:String x:Key="Settings.SmoothTransitionHint">速率和流量变化时使用平滑动画过渡</sys:String>
     <sys:String x:Key="Settings.Appearance">外观</sys:String>
@@ -50,9 +51,12 @@
     <sys:String x:Key="Settings.FontPreset">预设字体...</sys:String>
     <sys:String x:Key="Settings.FontSize">字号</sys:String>
     <sys:String x:Key="Settings.ColorMax">颜色上限</sys:String>
-    <sys:String x:Key="Settings.ColorMaxHint">速率从白到红渐变的阈值</sys:String>
-    <sys:String x:Key="Settings.IndicatorBlinkThreshold">指示灯闪烁阈值</sys:String>
-    <sys:String x:Key="Settings.IndicatorBlinkThresholdHint">达到该网速时使用最快闪烁，数值越高越不敏感。</sys:String>
+    <sys:String x:Key="Settings.ColorMaxHint">网速越高颜色越偏红；这里设置达到红色需要多快。</sys:String>
+    <sys:String x:Key="Settings.IndicatorBlinkThreshold">左侧动画速度</sys:String>
+    <sys:String x:Key="Settings.IndicatorBlinkThresholdHint">网速达到这里设置的值时，左侧信号灯和动画会按最快速度播放；数值越小越容易变快。</sys:String>
+    <sys:String x:Key="Settings.LeftAnimation">左侧动画</sys:String>
+    <sys:String x:Key="Settings.LeftAnimationHint">选择悬浮窗左边显示哪种动画；选“随机替换”会每隔 5 到 30 秒自动换一个。</sys:String>
+    <sys:String x:Key="Settings.LeftAnimationRandom">随机替换</sys:String>
     <sys:String x:Key="Settings.TrafficStats">流量统计</sys:String>
     <sys:String x:Key="Settings.TrafficStatsSubtitle">需要重新计数时，重置本地流量统计。</sys:String>
     <sys:String x:Key="Settings.ResetHint">重置后不可恢复，请谨慎操作</sys:String>

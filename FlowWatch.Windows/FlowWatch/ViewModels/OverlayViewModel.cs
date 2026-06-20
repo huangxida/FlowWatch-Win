@@ -12,12 +12,18 @@ namespace FlowWatch.ViewModels
     public class OverlayViewModel : ViewModelBase
     {
         private const string MinimalDisplayMode = "minimal";
+        private const string SpiralDisplayMode = "spiral";
         private const double SignalBlinkMinSpeedBytesPerSecond = 1024.0;
         private const double SignalOffOpacity = 0.0;
         private const double SignalBrightOpacity = 1.0;
         private const double SignalIntervalSmoothingSeconds = 0.22;
         private const int SignalSlowBlinkMs = 900;
         private const int SignalFastBlinkMs = 120;
+        private const double SpeedColorStepBytesPerSecond = 262144.0;
+        private const double SpiralMotionHoldSeconds = 2.0;
+        private const double SpiralMotionDecaySeconds = 3.0;
+        private const int RandomAnimationMinIntervalMs = 5000;
+        private const int RandomAnimationMaxIntervalMs = 30000;
 
         private string _uploadNum = "0.0";
         private string _uploadUnit = "KB/s";
@@ -36,13 +42,24 @@ namespace FlowWatch.ViewModels
         private bool _isVertical;
         private bool _isLocked = true;
         private string _displayMode = "speed";
+        private string _overlayAnimationKey = MathCurveCatalog.DefaultKey;
+        private string _activeOverlayAnimationKey = MathCurveCatalog.DefaultKey;
         private Visibility _secondaryVisibility = Visibility.Collapsed;
         private Visibility _standardVisibility = Visibility.Visible;
         private Visibility _minimalVisibility = Visibility.Collapsed;
+        private Visibility _spiralVisibility = Visibility.Collapsed;
         private Brush _uploadSignalColor = Brushes.White;
         private Brush _downloadSignalColor = Brushes.White;
         private double _uploadSignalOpacity = SignalBrightOpacity;
         private double _downloadSignalOpacity = SignalBrightOpacity;
+        private Brush _spiralColor = Brushes.White;
+        private double _spiralMotionRatio;
+        private double _lastSpiralColorSpeedBytesPerSecond;
+        private double _lastSpiralMotionSpeedBytesPerSecond;
+        private double _heldSpiralMotionRatio;
+        private long _lastSpiralMotionUpdateTick;
+        private long _lastSpiralMotionPeakTick;
+        private long _lastSpiralMotionLogTick;
 
         // Smooth transition animation state
         private double _displayedDownSpeed, _displayedUpSpeed;
@@ -52,6 +69,7 @@ namespace FlowWatch.ViewModels
         private double _startTotalDown, _startTotalUp;
         private double _targetTotalDown, _targetTotalUp;
         private DispatcherTimer _animationTimer;
+        private DispatcherTimer _randomAnimationTimer;
         private long _animationStartTick;
         private int _animationDurationMs = 1000;
         private string _lastRenderedKey;
@@ -60,8 +78,10 @@ namespace FlowWatch.ViewModels
         private bool _totalsInitialized;
         private long _lastDownColorQ = -1;
         private long _lastUpColorQ = -1;
+        private long _lastSpiralColorQ = -1;
         private int _indicatorBlinkThresholdMbps = 100;
         private bool _signalRenderingSubscribed;
+        private readonly Random _random = new Random();
         private readonly SignalBreathState _downloadBreath = new SignalBreathState();
         private readonly SignalBreathState _uploadBreath = new SignalBreathState();
 
@@ -211,9 +231,11 @@ namespace FlowWatch.ViewModels
                 if (SetProperty(ref _displayMode, mode))
                 {
                     var isMinimal = mode == MinimalDisplayMode;
+                    var isSpiral = mode == SpiralDisplayMode;
                     SecondaryVisibility = mode == "both" ? Visibility.Visible : Visibility.Collapsed;
-                    StandardVisibility = isMinimal ? Visibility.Collapsed : Visibility.Visible;
+                    StandardVisibility = isMinimal || isSpiral ? Visibility.Collapsed : Visibility.Visible;
                     MinimalVisibility = isMinimal ? Visibility.Visible : Visibility.Collapsed;
+                    SpiralVisibility = isSpiral ? Visibility.Visible : Visibility.Collapsed;
                     if (isMinimal)
                         RefreshSignalBlinking();
                     else
@@ -221,8 +243,26 @@ namespace FlowWatch.ViewModels
                     OnPropertyChanged(nameof(ShowSpeed));
                     OnPropertyChanged(nameof(ShowUsage));
                     OnPropertyChanged(nameof(IsMinimalMode));
+                    OnPropertyChanged(nameof(IsSpiralMode));
+                    UpdateAnimationSelectionMode();
                 }
             }
+        }
+
+        public string OverlayAnimationKey
+        {
+            get => _overlayAnimationKey;
+            set
+            {
+                if (SetProperty(ref _overlayAnimationKey, MathCurveCatalog.NormalizeKey(value)))
+                    UpdateAnimationSelectionMode();
+            }
+        }
+
+        public string ActiveOverlayAnimationKey
+        {
+            get => _activeOverlayAnimationKey;
+            private set => SetProperty(ref _activeOverlayAnimationKey, MathCurveCatalog.Get(value).Key);
         }
 
         public Visibility SecondaryVisibility
@@ -241,6 +281,12 @@ namespace FlowWatch.ViewModels
         {
             get => _minimalVisibility;
             set => SetProperty(ref _minimalVisibility, value);
+        }
+
+        public Visibility SpiralVisibility
+        {
+            get => _spiralVisibility;
+            set => SetProperty(ref _spiralVisibility, value);
         }
 
         public Brush UploadSignalColor
@@ -267,9 +313,22 @@ namespace FlowWatch.ViewModels
             set => SetProperty(ref _downloadSignalOpacity, value);
         }
 
-        public bool ShowSpeed => _displayMode != "usage" && _displayMode != MinimalDisplayMode;
+        public Brush SpiralColor
+        {
+            get => _spiralColor;
+            set => SetProperty(ref _spiralColor, value);
+        }
+
+        public double SpiralMotionRatio
+        {
+            get => _spiralMotionRatio;
+            set => SetProperty(ref _spiralMotionRatio, Math.Min(1.0, Math.Max(0.0, value)));
+        }
+
+        public bool ShowSpeed => _displayMode != "usage" && _displayMode != MinimalDisplayMode && _displayMode != SpiralDisplayMode;
         public bool ShowUsage => _displayMode == "usage";
         public bool IsMinimalMode => _displayMode == MinimalDisplayMode;
+        public bool IsSpiralMode => _displayMode == SpiralDisplayMode;
         public string UploadMinimalUsageText => FormatMinimalUsageText(_uploadUsageNum, _uploadUsageUnit);
         public string DownloadMinimalUsageText => FormatMinimalUsageText(_downloadUsageNum, _downloadUsageUnit);
 
@@ -372,9 +431,8 @@ namespace FlowWatch.ViewModels
             var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown, alwaysShowDecimal: true);
             var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp, alwaysShowDecimal: true);
 
-            const double colorStep = 262144.0;
-            long downColorQ = (long)(downSpeed / colorStep);
-            long upColorQ = (long)(upSpeed / colorStep);
+            long downColorQ = (long)(downSpeed / SpeedColorStepBytesPerSecond);
+            long upColorQ = (long)(upSpeed / SpeedColorStepBytesPerSecond);
 
             return BuildRenderKey(_displayMode, downNum, downUnit, upNum, upUnit, downUsageNum, downUsageUnit, upUsageNum, upUsageUnit, downColorQ, upColorQ);
         }
@@ -382,16 +440,22 @@ namespace FlowWatch.ViewModels
         private void UpdateDisplay(double downSpeed, double upSpeed, long totalDown, long totalUp)
         {
             var settings = SettingsService.Instance.Settings;
-            int maxMbps = settings.SpeedColorMaxMbps;
+            int colorMaxMbps = settings.SpeedColorMaxMbps;
+            int motionMaxMbps = Math.Max(1, Math.Min(1000, settings.IndicatorBlinkThresholdMbps));
 
             var (downNum, downUnit) = FormatHelper.FormatSpeed(downSpeed, alwaysShowDecimal: true);
             var (upNum, upUnit) = FormatHelper.FormatSpeed(upSpeed, alwaysShowDecimal: true);
             var (downUsageNum, downUsageUnit) = FormatHelper.FormatUsage(totalDown, alwaysShowDecimal: true);
             var (upUsageNum, upUsageUnit) = FormatHelper.FormatUsage(totalUp, alwaysShowDecimal: true);
 
-            const double colorStep = 262144.0;
-            long downColorQ = (long)(downSpeed / colorStep);
-            long upColorQ = (long)(upSpeed / colorStep);
+            UpdateSpiralVisuals(
+                Math.Max(downSpeed, upSpeed),
+                Math.Max(0.0, downSpeed) + Math.Max(0.0, upSpeed),
+                colorMaxMbps,
+                motionMaxMbps);
+
+            long downColorQ = (long)(downSpeed / SpeedColorStepBytesPerSecond);
+            long upColorQ = (long)(upSpeed / SpeedColorStepBytesPerSecond);
 
             string key = BuildRenderKey(_displayMode, downNum, downUnit, upNum, upUnit, downUsageNum, downUsageUnit, upUsageNum, upUsageUnit, downColorQ, upColorQ);
 
@@ -422,7 +486,7 @@ namespace FlowWatch.ViewModels
             if (downColorQ != _lastDownColorQ)
             {
                 _lastDownColorQ = downColorQ;
-                var downBrush = ColorGradient.GetSpeedBrush(downSpeed, maxMbps);
+                var downBrush = ColorGradient.GetSpeedBrush(downSpeed, colorMaxMbps);
                 DownloadColor = downBrush;
                 DownloadLabelColor = downBrush;
                 DownloadSignalColor = GetSignalBrush(_downloadBreath, downBrush);
@@ -431,11 +495,86 @@ namespace FlowWatch.ViewModels
             if (upColorQ != _lastUpColorQ)
             {
                 _lastUpColorQ = upColorQ;
-                var upBrush = ColorGradient.GetSpeedBrush(upSpeed, maxMbps);
+                var upBrush = ColorGradient.GetSpeedBrush(upSpeed, colorMaxMbps);
                 UploadColor = upBrush;
                 UploadLabelColor = upBrush;
                 UploadSignalColor = GetSignalBrush(_uploadBreath, upBrush);
             }
+        }
+
+        private void UpdateSpiralVisuals(double colorSpeedBytesPerSecond, double motionSpeedBytesPerSecond, int colorMaxMbps, int motionMaxMbps)
+        {
+            var clampedColorSpeed = Math.Max(0.0, colorSpeedBytesPerSecond);
+            var clampedMotionSpeed = Math.Max(0.0, motionSpeedBytesPerSecond);
+            _lastSpiralColorSpeedBytesPerSecond = clampedColorSpeed;
+            _lastSpiralMotionSpeedBytesPerSecond = clampedMotionSpeed;
+            double rawMotionRatio = GetMotionRatio(clampedMotionSpeed, motionMaxMbps);
+            double stabilizedMotionRatio = GetStabilizedSpiralMotionRatio(rawMotionRatio);
+            SpiralMotionRatio = stabilizedMotionRatio;
+            LogSpiralMotionDebug(clampedMotionSpeed, rawMotionRatio, stabilizedMotionRatio, motionMaxMbps);
+
+            long speedColorQ = (long)(clampedColorSpeed / SpeedColorStepBytesPerSecond);
+            if (speedColorQ == _lastSpiralColorQ)
+                return;
+
+            _lastSpiralColorQ = speedColorQ;
+            SpiralColor = ColorGradient.GetSpeedBrush(clampedColorSpeed, colorMaxMbps);
+        }
+
+        private double GetStabilizedSpiralMotionRatio(double rawRatio)
+        {
+            long now = Stopwatch.GetTimestamp();
+            if (_lastSpiralMotionUpdateTick == 0)
+            {
+                _lastSpiralMotionUpdateTick = now;
+                _lastSpiralMotionPeakTick = now;
+                _heldSpiralMotionRatio = rawRatio;
+                return _heldSpiralMotionRatio;
+            }
+
+            double elapsedSeconds = (now - _lastSpiralMotionUpdateTick) / (double)Stopwatch.Frequency;
+            _lastSpiralMotionUpdateTick = now;
+            elapsedSeconds = Math.Max(0.0, Math.Min(1.0, elapsedSeconds));
+
+            if (rawRatio >= _heldSpiralMotionRatio)
+            {
+                _heldSpiralMotionRatio = rawRatio;
+                _lastSpiralMotionPeakTick = now;
+                return _heldSpiralMotionRatio;
+            }
+
+            double secondsSincePeak = (now - _lastSpiralMotionPeakTick) / (double)Stopwatch.Frequency;
+            if (secondsSincePeak < SpiralMotionHoldSeconds)
+                return _heldSpiralMotionRatio;
+
+            double smoothing = 1.0 - Math.Exp(-elapsedSeconds / SpiralMotionDecaySeconds);
+            _heldSpiralMotionRatio += (rawRatio - _heldSpiralMotionRatio) * smoothing;
+            return _heldSpiralMotionRatio;
+        }
+
+        private void LogSpiralMotionDebug(double speedBytesPerSecond, double rawRatio, double stabilizedRatio, int thresholdMbps)
+        {
+            if (!IsSpiralMode)
+                return;
+
+            long now = Stopwatch.GetTimestamp();
+            if (_lastSpiralMotionLogTick != 0 &&
+                (now - _lastSpiralMotionLogTick) / (double)Stopwatch.Frequency < 1.0)
+            {
+                return;
+            }
+
+            _lastSpiralMotionLogTick = now;
+            double mbps = speedBytesPerSecond * 8.0 / 1_000_000.0;
+            LogService.Debug(
+                $"SpiralMotion speedMbps={mbps:0.###}, thresholdMbps={thresholdMbps}, raw={rawRatio:0.###}, stabilized={stabilizedRatio:0.###}");
+        }
+
+        private static double GetMotionRatio(double speedBytesPerSecond, int thresholdMbps)
+        {
+            double mbps = Math.Max(0.0, speedBytesPerSecond) * 8.0 / 1_000_000.0;
+            double threshold = Math.Max(1.0, thresholdMbps);
+            return Math.Min(1.0, Math.Max(0.0, mbps / threshold));
         }
 
         private void UpdateSignalBlinking(double downSpeed, double upSpeed)
@@ -637,6 +776,97 @@ namespace FlowWatch.ViewModels
             state.TargetBlinkIntervalSeconds = SignalSlowBlinkMs / 1000.0;
         }
 
+        private void UpdateAnimationSelectionMode()
+        {
+            if (IsSpiralMode && MathCurveCatalog.IsRandomKey(_overlayAnimationKey))
+            {
+                if (!IsRealCurveKey(_activeOverlayAnimationKey))
+                    ActiveOverlayAnimationKey = MathCurveCatalog.DefaultKey;
+                EnsureRandomAnimationTimer();
+                return;
+            }
+
+            StopRandomAnimationTimer();
+            if (!MathCurveCatalog.IsRandomKey(_overlayAnimationKey))
+                ActiveOverlayAnimationKey = _overlayAnimationKey;
+            else if (!IsRealCurveKey(_activeOverlayAnimationKey))
+                ActiveOverlayAnimationKey = MathCurveCatalog.DefaultKey;
+        }
+
+        private void EnsureRandomAnimationTimer()
+        {
+            if (_randomAnimationTimer == null)
+            {
+                _randomAnimationTimer = new DispatcherTimer();
+                _randomAnimationTimer.Tick += OnRandomAnimationTimerTick;
+            }
+
+            if (!_randomAnimationTimer.IsEnabled)
+                ScheduleNextRandomAnimation();
+        }
+
+        private void ScheduleNextRandomAnimation()
+        {
+            if (_randomAnimationTimer == null)
+                return;
+
+            _randomAnimationTimer.Interval = TimeSpan.FromMilliseconds(
+                _random.Next(RandomAnimationMinIntervalMs, RandomAnimationMaxIntervalMs + 1));
+            _randomAnimationTimer.Start();
+        }
+
+        private void StopRandomAnimationTimer()
+        {
+            if (_randomAnimationTimer?.IsEnabled == true)
+                _randomAnimationTimer.Stop();
+        }
+
+        private void OnRandomAnimationTimerTick(object sender, EventArgs e)
+        {
+            _randomAnimationTimer.Stop();
+            if (!IsSpiralMode || !MathCurveCatalog.IsRandomKey(_overlayAnimationKey))
+                return;
+
+            ActiveOverlayAnimationKey = PickRandomCurveKey(_activeOverlayAnimationKey);
+            ScheduleNextRandomAnimation();
+        }
+
+        private string PickRandomCurveKey(string excludedKey)
+        {
+            var definitions = MathCurveCatalog.All;
+            if (definitions.Count == 0)
+                return MathCurveCatalog.DefaultKey;
+            if (definitions.Count == 1)
+                return definitions[0].Key;
+
+            string currentKey = MathCurveCatalog.Get(excludedKey).Key;
+            for (int attempt = 0; attempt < 8; attempt++)
+            {
+                string candidate = definitions[_random.Next(definitions.Count)].Key;
+                if (!string.Equals(candidate, currentKey, StringComparison.OrdinalIgnoreCase))
+                    return candidate;
+            }
+
+            foreach (var definition in definitions)
+            {
+                if (!string.Equals(definition.Key, currentKey, StringComparison.OrdinalIgnoreCase))
+                    return definition.Key;
+            }
+
+            return definitions[0].Key;
+        }
+
+        private static bool IsRealCurveKey(string key)
+        {
+            foreach (var definition in MathCurveCatalog.All)
+            {
+                if (string.Equals(definition.Key, key, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
         private void OnSettingsChanged()
         {
             ApplySettings();
@@ -651,6 +881,7 @@ namespace FlowWatch.ViewModels
             IsVertical = s.Layout == "vertical";
             IsLocked = s.LockOnTop;
             DisplayMode = s.DisplayMode;
+            OverlayAnimationKey = s.OverlayAnimationKey;
 
             _smoothTransition = s.SmoothTransition;
             _indicatorBlinkThresholdMbps = Math.Max(1, Math.Min(1000, s.IndicatorBlinkThresholdMbps));
@@ -659,6 +890,12 @@ namespace FlowWatch.ViewModels
             _lastRenderedKey = null;
             _lastDownColorQ = -1;
             _lastUpColorQ = -1;
+            _lastSpiralColorQ = -1;
+            UpdateSpiralVisuals(
+                _lastSpiralColorSpeedBytesPerSecond,
+                _lastSpiralMotionSpeedBytesPerSecond,
+                s.SpeedColorMaxMbps,
+                _indicatorBlinkThresholdMbps);
             RefreshSignalBlinking();
 
             if (!_smoothTransition)
@@ -680,6 +917,7 @@ namespace FlowWatch.ViewModels
                 case "usage":
                 case "both":
                 case MinimalDisplayMode:
+                case SpiralDisplayMode:
                     return value;
                 default:
                     return "speed";
@@ -689,6 +927,12 @@ namespace FlowWatch.ViewModels
         public void Cleanup()
         {
             _animationTimer?.Stop();
+            if (_randomAnimationTimer != null)
+            {
+                _randomAnimationTimer.Stop();
+                _randomAnimationTimer.Tick -= OnRandomAnimationTimerTick;
+                _randomAnimationTimer = null;
+            }
             StopSignalRendering();
             NetworkMonitorService.Instance.StatsUpdated -= OnStatsUpdated;
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;

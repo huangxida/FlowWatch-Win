@@ -42,6 +42,7 @@
     <sys:String x:Key="Settings.DisplayUsage">Usage</sys:String>
     <sys:String x:Key="Settings.DisplayBoth">Speed+Usage</sys:String>
     <sys:String x:Key="Settings.DisplayMinimal">Minimal</sys:String>
+    <sys:String x:Key="Settings.DisplaySpiral">Animation + Today Usage</sys:String>
     <sys:String x:Key="Settings.SmoothTransition">Smooth Transition</sys:String>
     <sys:String x:Key="Settings.SmoothTransitionHint">Animate speed and usage changes smoothly</sys:String>
     <sys:String x:Key="Settings.Appearance">Appearance</sys:String>
@@ -50,9 +51,12 @@
     <sys:String x:Key="Settings.FontPreset">Font Presets...</sys:String>
     <sys:String x:Key="Settings.FontSize">Font Size</sys:String>
     <sys:String x:Key="Settings.ColorMax">Color Max</sys:String>
-    <sys:String x:Key="Settings.ColorMaxHint">Threshold for white-to-red speed gradient</sys:String>
-    <sys:String x:Key="Settings.IndicatorBlinkThreshold">Indicator Blink Threshold</sys:String>
-    <sys:String x:Key="Settings.IndicatorBlinkThresholdHint">Speed that maps to the fastest indicator blink. Higher values make blinking less sensitive.</sys:String>
+    <sys:String x:Key="Settings.ColorMaxHint">Higher speed looks more red. Set the speed that should count as fully red.</sys:String>
+    <sys:String x:Key="Settings.IndicatorBlinkThreshold">Left Animation Speed</sys:String>
+    <sys:String x:Key="Settings.IndicatorBlinkThresholdHint">When speed reaches this value, the left signal light and animation play at their fastest. Lower values speed up sooner.</sys:String>
+    <sys:String x:Key="Settings.LeftAnimation">Left Animation</sys:String>
+    <sys:String x:Key="Settings.LeftAnimationHint">Choose the animation shown on the left. Random Shuffle automatically changes it every 5 to 30 seconds.</sys:String>
+    <sys:String x:Key="Settings.LeftAnimationRandom">Random Shuffle</sys:String>
     <sys:String x:Key="Settings.TrafficStats">Traffic Statistics</sys:String>
     <sys:String x:Key="Settings.TrafficStatsSubtitle">Reset local traffic counters when you need a fresh baseline.</sys:String>
     <sys:String x:Key="Settings.ResetHint">This action cannot be undone</sys:String>

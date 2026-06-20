@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
+using FlowWatch.Helpers;
 using FlowWatch.Services;
 
 namespace FlowWatch.ViewModels
@@ -8,6 +10,7 @@ namespace FlowWatch.ViewModels
     public class SettingsViewModel : ViewModelBase
     {
         private const string MinimalDisplayMode = "minimal";
+        private const string SpiralDisplayMode = "spiral";
 
         private int _refreshIntervalSeconds = 1;
         private bool _lockOnTop = true;
@@ -17,6 +20,8 @@ namespace FlowWatch.ViewModels
         private string _language = "auto";
         private string _layout = "horizontal";
         private string _displayMode = "speed";
+        private string _overlayAnimationKey = MathCurveCatalog.DefaultKey;
+        private IReadOnlyList<MathCurveAnimationOption> _overlayAnimationOptions = MathCurveCatalog.Options;
         private string _fontFamily = "Segoe UI, Microsoft YaHei, sans-serif";
         private int _fontSize = 18;
         private int _speedColorMaxMbps = 100;
@@ -34,6 +39,8 @@ namespace FlowWatch.ViewModels
             CheckUpdateCommand = new RelayCommand(OnCheckUpdate, () => !_isCheckingUpdate);
             ClearSkippedCommand = new RelayCommand(OnClearSkipped);
             SettingsService.Instance.SettingsChanged += OnSettingsChanged;
+            LocalizationService.Instance.LanguageChanged += OnLanguageChanged;
+            RebuildOverlayAnimationOptions();
             LoadFromSettings();
         }
 
@@ -130,6 +137,22 @@ namespace FlowWatch.ViewModels
             }
         }
 
+        public IReadOnlyList<MathCurveAnimationOption> OverlayAnimationOptions
+        {
+            get => _overlayAnimationOptions;
+            private set => SetProperty(ref _overlayAnimationOptions, value);
+        }
+
+        public string OverlayAnimationKey
+        {
+            get => _overlayAnimationKey;
+            set
+            {
+                if (SetProperty(ref _overlayAnimationKey, MathCurveCatalog.NormalizeKey(value)))
+                    PushSettings();
+            }
+        }
+
         public string FontFamily
         {
             get => _fontFamily;
@@ -217,6 +240,7 @@ namespace FlowWatch.ViewModels
             Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode;
+            OverlayAnimationKey = s.OverlayAnimationKey;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
@@ -243,6 +267,7 @@ namespace FlowWatch.ViewModels
                 s.Language = _language;
                 s.Layout = _layout;
                 s.DisplayMode = _displayMode;
+                s.OverlayAnimationKey = _overlayAnimationKey;
                 s.FontFamily = _fontFamily;
                 s.FontSize = _fontSize;
                 s.SpeedColorMaxMbps = _speedColorMaxMbps;
@@ -270,6 +295,7 @@ namespace FlowWatch.ViewModels
             Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode;
+            OverlayAnimationKey = s.OverlayAnimationKey;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
@@ -360,6 +386,19 @@ namespace FlowWatch.ViewModels
         public void Cleanup()
         {
             SettingsService.Instance.SettingsChanged -= OnSettingsChanged;
+            LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
+        }
+
+        private void OnLanguageChanged()
+        {
+            RebuildOverlayAnimationOptions();
+        }
+
+        private void RebuildOverlayAnimationOptions()
+        {
+            OverlayAnimationOptions = MathCurveCatalog.CreateOptions(
+                LocalizationService.Instance.Get("Settings.LeftAnimationRandom"));
+            OnPropertyChanged(nameof(OverlayAnimationKey));
         }
 
         private static string NormalizeDisplayMode(string value)
@@ -370,6 +409,7 @@ namespace FlowWatch.ViewModels
                 case "usage":
                 case "both":
                 case MinimalDisplayMode:
+                case SpiralDisplayMode:
                     return value;
                 default:
                     return "speed";
