@@ -49,6 +49,8 @@
     <sys:String x:Key="Settings.Font">Font</sys:String>
     <sys:String x:Key="Settings.FontPreset">Font Presets...</sys:String>
     <sys:String x:Key="Settings.FontSize">Font Size</sys:String>
+    <sys:String x:Key="Settings.TextEnhancement">Text Readability</sys:String>
+    <sys:String x:Key="Settings.TextEnhancementHint">Add a dark outline around overlay text for light backgrounds</sys:String>
     <sys:String x:Key="Settings.ColorMax">Color Max</sys:String>
     <sys:String x:Key="Settings.ColorMaxHint">Threshold for white-to-red speed gradient</sys:String>
     <sys:String x:Key="Settings.IndicatorBlinkThreshold">Indicator Blink Threshold</sys:String>

@@ -33,6 +33,7 @@ namespace FlowWatch.ViewModels
         private Brush _downloadLabelColor;
         private FontFamily _fontFamily = new FontFamily("Segoe UI, Microsoft YaHei");
         private double _fontSize = 18;
+        private bool _overlayTextEnhancementEnabled = true;
         private bool _isVertical;
         private bool _isLocked = true;
         private string _displayMode = "speed";
@@ -189,6 +190,12 @@ namespace FlowWatch.ViewModels
         }
 
         public double MinimalFontSize => Math.Max(10, FontSize - 1);
+
+        public bool OverlayTextEnhancementEnabled
+        {
+            get => _overlayTextEnhancementEnabled;
+            private set => SetProperty(ref _overlayTextEnhancementEnabled, value);
+        }
 
         public bool IsVertical
         {
@@ -648,6 +655,7 @@ namespace FlowWatch.ViewModels
 
             FontFamily = FontHelper.ResolveFontFamily(s.FontFamily, "overlay");
             FontSize = Math.Max(11, Math.Min(19, s.FontSize));
+            OverlayTextEnhancementEnabled = s.OverlayTextEnhancementEnabled;
             IsVertical = s.Layout == "vertical";
             IsLocked = s.LockOnTop;
             DisplayMode = s.DisplayMode;

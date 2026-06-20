@@ -7,6 +7,7 @@ namespace FlowWatch.Models
         public bool AutoHide { get; set; } = false;
         public string FontFamily { get; set; } = "Segoe UI, Microsoft YaHei, sans-serif";
         public int FontSize { get; set; } = 18;
+        public bool OverlayTextEnhancementEnabled { get; set; } = true;
         public string Layout { get; set; } = "horizontal";
         public int SpeedColorMaxMbps { get; set; } = 100;
         public int IndicatorBlinkThresholdMbps { get; set; } = 100;
