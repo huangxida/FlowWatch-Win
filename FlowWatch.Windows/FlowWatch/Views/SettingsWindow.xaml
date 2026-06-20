@@ -251,6 +251,19 @@
 
                             <Border Style="{StaticResource DividerStyle}"/>
 
+                            <DockPanel Margin="0,14,0,14">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.TextEnhancement}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.TextEnhancementHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <CheckBox IsChecked="{Binding OverlayTextEnhancementEnabled}"
+                                          Style="{StaticResource ToggleSwitchStyle}"
+                                          DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"/>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
                             <StackPanel Margin="0,14,0,0">
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Left" MaxWidth="420">

@@ -24,6 +24,7 @@ namespace FlowWatch.ViewModels
         private IReadOnlyList<MathCurveAnimationOption> _overlayAnimationOptions = MathCurveCatalog.Options;
         private string _fontFamily = "Segoe UI, Microsoft YaHei, sans-serif";
         private int _fontSize = 18;
+        private bool _overlayTextEnhancementEnabled = true;
         private int _speedColorMaxMbps = 100;
         private int _indicatorBlinkThresholdMbps = 100;
         private bool _smoothTransition = true;
@@ -173,6 +174,16 @@ namespace FlowWatch.ViewModels
             }
         }
 
+        public bool OverlayTextEnhancementEnabled
+        {
+            get => _overlayTextEnhancementEnabled;
+            set
+            {
+                if (SetProperty(ref _overlayTextEnhancementEnabled, value))
+                    PushSettings();
+            }
+        }
+
         public int SpeedColorMaxMbps
         {
             get => _speedColorMaxMbps;
@@ -243,6 +254,7 @@ namespace FlowWatch.ViewModels
             OverlayAnimationKey = s.OverlayAnimationKey;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
+            OverlayTextEnhancementEnabled = s.OverlayTextEnhancementEnabled;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
             IndicatorBlinkThresholdMbps = s.IndicatorBlinkThresholdMbps;
             SmoothTransition = s.SmoothTransition;
@@ -270,6 +282,7 @@ namespace FlowWatch.ViewModels
                 s.OverlayAnimationKey = _overlayAnimationKey;
                 s.FontFamily = _fontFamily;
                 s.FontSize = _fontSize;
+                s.OverlayTextEnhancementEnabled = _overlayTextEnhancementEnabled;
                 s.SpeedColorMaxMbps = _speedColorMaxMbps;
                 s.IndicatorBlinkThresholdMbps = _indicatorBlinkThresholdMbps;
                 s.SmoothTransition = _smoothTransition;
@@ -298,6 +311,7 @@ namespace FlowWatch.ViewModels
             OverlayAnimationKey = s.OverlayAnimationKey;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
+            OverlayTextEnhancementEnabled = s.OverlayTextEnhancementEnabled;
             SpeedColorMaxMbps = s.SpeedColorMaxMbps;
             IndicatorBlinkThresholdMbps = s.IndicatorBlinkThresholdMbps;
             SmoothTransition = s.SmoothTransition;

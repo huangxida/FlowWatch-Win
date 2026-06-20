@@ -50,6 +50,8 @@
     <sys:String x:Key="Settings.Font">字体</sys:String>
     <sys:String x:Key="Settings.FontPreset">预设字体...</sys:String>
     <sys:String x:Key="Settings.FontSize">字号</sys:String>
+    <sys:String x:Key="Settings.TextEnhancement">文字可读性增强</sys:String>
+    <sys:String x:Key="Settings.TextEnhancementHint">为悬浮窗文字添加暗色描边，提升浅色背景下的清晰度</sys:String>
     <sys:String x:Key="Settings.ColorMax">颜色上限</sys:String>
     <sys:String x:Key="Settings.ColorMaxHint">网速越高颜色越偏红；这里设置达到红色需要多快。</sys:String>
     <sys:String x:Key="Settings.IndicatorBlinkThreshold">左侧动画速度</sys:String>

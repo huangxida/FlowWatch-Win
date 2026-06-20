@@ -208,7 +208,7 @@
             <Ellipse Grid.Row="0" Grid.Column="0" Width="10" Height="10"
                      Fill="{Binding UploadSignalColor}"
                      Opacity="{Binding UploadSignalOpacity}"
-                     Effect="{StaticResource OverlayTextShadow}"
+                     Effect="{StaticResource OverlaySignalShadow}"
                      VerticalAlignment="Center" Margin="0,0,5,0"/>
             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding UploadMinimalUsageText}" Style="{StaticResource NumStyle}"
                        Foreground="{Binding UploadColor}"
@@ -220,7 +220,7 @@
             <Ellipse Grid.Row="1" Grid.Column="0" Width="10" Height="10"
                      Fill="{Binding DownloadSignalColor}"
                      Opacity="{Binding DownloadSignalOpacity}"
-                     Effect="{StaticResource OverlayTextShadow}"
+                     Effect="{StaticResource OverlaySignalShadow}"
                      VerticalAlignment="Center" Margin="0,1,5,0"/>
             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DownloadMinimalUsageText}" Style="{StaticResource NumStyle}"
                        Foreground="{Binding DownloadColor}"
