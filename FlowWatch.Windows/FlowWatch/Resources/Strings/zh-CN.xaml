@@ -57,8 +57,10 @@
     <sys:String x:Key="Settings.IndicatorBlinkThreshold">左侧动画速度</sys:String>
     <sys:String x:Key="Settings.IndicatorBlinkThresholdHint">网速达到这里设置的值时，左侧信号灯和动画会按最快速度播放；数值越小越容易变快。</sys:String>
     <sys:String x:Key="Settings.LeftAnimation">左侧动画</sys:String>
-    <sys:String x:Key="Settings.LeftAnimationHint">选择悬浮窗左边显示哪种动画；选“随机替换”会每隔 5 到 30 秒自动换一个。</sys:String>
+    <sys:String x:Key="Settings.LeftAnimationHint">选择悬浮窗左边显示哪种动画；选“随机替换”后会按下方间隔自动切换。</sys:String>
     <sys:String x:Key="Settings.LeftAnimationRandom">随机替换</sys:String>
+    <sys:String x:Key="Settings.RandomAnimationInterval">随机变化间隔</sys:String>
+    <sys:String x:Key="Settings.RandomAnimationIntervalHint">设置随机替换多久自动切换到另一个动画。</sys:String>
     <sys:String x:Key="Settings.TrafficStats">流量统计</sys:String>
     <sys:String x:Key="Settings.TrafficStatsSubtitle">需要重新计数时，重置本地流量统计。</sys:String>
     <sys:String x:Key="Settings.ResetHint">重置后不可恢复，请谨慎操作</sys:String>

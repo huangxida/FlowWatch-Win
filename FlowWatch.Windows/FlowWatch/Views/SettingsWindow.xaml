@@ -317,6 +317,32 @@
                                 </ComboBox>
                             </Grid>
 
+                            <StackPanel Margin="0,0,0,14"
+                                        Visibility="{Binding RandomAnimationIntervalVisibility}">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                        <TextBlock Text="{DynamicResource Settings.RandomAnimationInterval}" Style="{StaticResource FieldLabelStyle}"/>
+                                        <TextBlock Text="{DynamicResource Settings.RandomAnimationIntervalHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource ValueStyle}" DockPanel.Dock="Right"
+                                               HorizontalAlignment="Right" VerticalAlignment="Top"
+                                               Text="{Binding OverlayRandomAnimationIntervalMinutes, StringFormat={}{0} min}"/>
+                                </DockPanel>
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="96"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider Grid.Column="0" Value="{Binding OverlayRandomAnimationIntervalMinutes}"
+                                            Minimum="1" Maximum="60" IsSnapToTickEnabled="True"
+                                            TickFrequency="1" Style="{StaticResource SettingsSliderStyle}"
+                                            VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding OverlayRandomAnimationIntervalMinutes, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource SettingsTextBoxStyle}" Margin="12,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
+
                             <Border Style="{StaticResource DividerStyle}" Margin="0,4,0,12"/>
 
                             <StackPanel Margin="0,0,0,0">

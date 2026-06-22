@@ -22,8 +22,9 @@ namespace FlowWatch.ViewModels
         private const double SpeedColorStepBytesPerSecond = 262144.0;
         private const double SpiralMotionHoldSeconds = 2.0;
         private const double SpiralMotionDecaySeconds = 3.0;
-        private const int RandomAnimationMinIntervalMs = 5000;
-        private const int RandomAnimationMaxIntervalMs = 30000;
+        private const int MinRandomAnimationIntervalMinutes = 1;
+        private const int MaxRandomAnimationIntervalMinutes = 60;
+        private const int DefaultRandomAnimationIntervalMinutes = 5;
 
         private string _uploadNum = "0.0";
         private string _uploadUnit = "KB/s";
@@ -81,6 +82,7 @@ namespace FlowWatch.ViewModels
         private long _lastUpColorQ = -1;
         private long _lastSpiralColorQ = -1;
         private int _indicatorBlinkThresholdMbps = 100;
+        private int _randomAnimationIntervalMinutes = DefaultRandomAnimationIntervalMinutes;
         private bool _signalRenderingSubscribed;
         private readonly Random _random = new Random();
         private readonly SignalBreathState _downloadBreath = new SignalBreathState();
@@ -817,8 +819,8 @@ namespace FlowWatch.ViewModels
             if (_randomAnimationTimer == null)
                 return;
 
-            _randomAnimationTimer.Interval = TimeSpan.FromMilliseconds(
-                _random.Next(RandomAnimationMinIntervalMs, RandomAnimationMaxIntervalMs + 1));
+            _randomAnimationTimer.Stop();
+            _randomAnimationTimer.Interval = TimeSpan.FromMinutes(_randomAnimationIntervalMinutes);
             _randomAnimationTimer.Start();
         }
 
@@ -882,7 +884,12 @@ namespace FlowWatch.ViewModels
         private void ApplySettings()
         {
             var s = SettingsService.Instance.Settings;
+            int randomAnimationIntervalMinutes = ClampRandomAnimationIntervalMinutes(
+                s.OverlayRandomAnimationIntervalMinutes);
+            bool randomAnimationIntervalChanged =
+                randomAnimationIntervalMinutes != _randomAnimationIntervalMinutes;
 
+            _randomAnimationIntervalMinutes = randomAnimationIntervalMinutes;
             FontFamily = FontHelper.ResolveFontFamily(s.FontFamily, "overlay");
             FontSize = Math.Max(11, Math.Min(19, s.FontSize));
             OverlayTextEnhancementEnabled = s.OverlayTextEnhancementEnabled;
@@ -890,6 +897,14 @@ namespace FlowWatch.ViewModels
             IsLocked = s.LockOnTop;
             DisplayMode = s.DisplayMode;
             OverlayAnimationKey = s.OverlayAnimationKey;
+
+            if (randomAnimationIntervalChanged &&
+                _randomAnimationTimer?.IsEnabled == true &&
+                IsSpiralMode &&
+                MathCurveCatalog.IsRandomKey(_overlayAnimationKey))
+            {
+                ScheduleNextRandomAnimation();
+            }
 
             _smoothTransition = s.SmoothTransition;
             _indicatorBlinkThresholdMbps = Math.Max(1, Math.Min(1000, s.IndicatorBlinkThresholdMbps));
@@ -930,6 +945,11 @@ namespace FlowWatch.ViewModels
                 default:
                     return "speed";
             }
+        }
+
+        private static int ClampRandomAnimationIntervalMinutes(int value)
+        {
+            return Math.Max(MinRandomAnimationIntervalMinutes, Math.Min(MaxRandomAnimationIntervalMinutes, value));
         }
 
         public void Cleanup()
