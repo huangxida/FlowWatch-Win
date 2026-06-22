@@ -14,7 +14,10 @@ namespace FlowWatch.Controls
         private const double MinMotionMultiplier = 0.35;
         private const double MaxMotionMultiplier = 3.0;
         private const double MotionSmoothingMs = 180.0;
-        private const double StableDetailScale = 0.76;
+        private const double DetailScaleBase = 0.52;
+        private const double DetailScaleAmplitude = 0.48;
+        private const double DetailScalePhaseOffset = 0.55;
+        private const double DetailScaleCacheStep = 0.01;
         private const double TransitionDurationMs = 450.0;
         private const double VirtualCanvasCenter = 50.0;
         private const double TargetCurveSize = 78.0;
@@ -153,7 +156,9 @@ namespace FlowWatch.Controls
                 return;
 
             double progress = NormalizeProgress((_motionTimeMs % definition.DurationMs) / definition.DurationMs);
-            var samples = GetCurveSamples(definition, scale, offset);
+            double detailScale = GetDetailScale(_motionTimeMs, definition);
+            double rotation = GetRotation(_motionTimeMs, definition);
+            var samples = GetCurveSamples(definition, detailScale, scale, offset);
 
             var pen = new Pen(brush, definition.StrokeWidth * scale)
             {
@@ -162,23 +167,60 @@ namespace FlowWatch.Controls
                 LineJoin = PenLineJoin.Round
             };
 
-            drawingContext.PushOpacity(opacity * 0.12);
-            drawingContext.DrawGeometry(null, pen, samples.Geometry);
-            drawingContext.Pop();
-
-            for (int index = definition.ParticleCount - 1; index >= 0; index--)
+            bool hasRotation = definition.Rotate && Math.Abs(rotation) > double.Epsilon;
+            if (hasRotation)
             {
-                double tailOffset = index / (double)(definition.ParticleCount - 1);
-                double particleProgress = NormalizeProgress(progress - tailOffset * definition.TrailSpan);
-                double fade = Math.Pow(1.0 - tailOffset, 0.56);
-                var point = GetPointAtArcProgress(samples, particleProgress);
-                double radius = (0.9 + fade * 2.7) * scale;
-                double particleOpacity = opacity * (0.04 + fade * 0.96);
-
-                drawingContext.PushOpacity(particleOpacity);
-                drawingContext.DrawEllipse(brush, null, point, radius, radius);
-                drawingContext.Pop();
+                var center = MapPoint(new Point(VirtualCanvasCenter, VirtualCanvasCenter), scale, offset);
+                drawingContext.PushTransform(new RotateTransform(rotation, center.X, center.Y));
             }
+
+            try
+            {
+                drawingContext.PushOpacity(opacity * 0.12);
+                drawingContext.DrawGeometry(null, pen, samples.Geometry);
+                drawingContext.Pop();
+
+                for (int index = definition.ParticleCount - 1; index >= 0; index--)
+                {
+                    double tailOffset = index / (double)(definition.ParticleCount - 1);
+                    double particleProgress = NormalizeProgress(progress - tailOffset * definition.TrailSpan);
+                    double fade = Math.Pow(1.0 - tailOffset, 0.56);
+                    var point = GetPointAtArcProgress(samples, particleProgress);
+                    double radius = (0.9 + fade * 2.7) * scale;
+                    double particleOpacity = opacity * (0.04 + fade * 0.96);
+
+                    drawingContext.PushOpacity(particleOpacity);
+                    drawingContext.DrawEllipse(brush, null, point, radius, radius);
+                    drawingContext.Pop();
+                }
+            }
+            finally
+            {
+                if (hasRotation)
+                    drawingContext.Pop();
+            }
+        }
+
+        private static double GetDetailScale(double timeMs, MathCurveDefinition definition)
+        {
+            double durationMs = definition.PulseDurationMs > 0.0
+                ? definition.PulseDurationMs
+                : definition.DurationMs;
+            if (durationMs <= 0.0)
+                return 1.0;
+
+            double progress = NormalizeProgress((timeMs % durationMs) / durationMs);
+            double angle = progress * Math.PI * 2.0;
+            return DetailScaleBase + ((Math.Sin(angle + DetailScalePhaseOffset) + 1.0) / 2.0) * DetailScaleAmplitude;
+        }
+
+        private static double GetRotation(double timeMs, MathCurveDefinition definition)
+        {
+            if (!definition.Rotate || definition.RotationDurationMs <= 0.0)
+                return 0.0;
+
+            double progress = NormalizeProgress((timeMs % definition.RotationDurationMs) / definition.RotationDurationMs);
+            return -progress * 360.0;
         }
 
         private double GetTransitionProgress()
@@ -305,15 +347,22 @@ namespace FlowWatch.Controls
             return 1.0 - Math.Exp(-elapsedMs / MotionSmoothingMs);
         }
 
-        private CurveSamples GetCurveSamples(MathCurveDefinition definition, double scale, Vector offset)
+        private CurveSamples GetCurveSamples(MathCurveDefinition definition, double detailScale, double scale, Vector offset)
         {
+            double cachedDetailScale = QuantizeDetailScale(detailScale);
+            string cacheKey = definition.Key + "|" + (int)Math.Round(cachedDetailScale / DetailScaleCacheStep);
             CurveSamples samples;
-            if (_curveCache.TryGetValue(definition.Key, out samples))
+            if (_curveCache.TryGetValue(cacheKey, out samples))
                 return samples;
 
-            samples = BuildCurveSamples(definition, StableDetailScale, scale, offset);
-            _curveCache[definition.Key] = samples;
+            samples = BuildCurveSamples(definition, cachedDetailScale, scale, offset);
+            _curveCache[cacheKey] = samples;
             return samples;
+        }
+
+        private static double QuantizeDetailScale(double detailScale)
+        {
+            return Math.Round(detailScale / DetailScaleCacheStep) * DetailScaleCacheStep;
         }
 
         private void ResetCurveCacheIfSizeChanged(double width, double height)
