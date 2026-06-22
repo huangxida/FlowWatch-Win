@@ -31,6 +31,9 @@ namespace FlowWatch.Helpers
             int particleCount,
             double trailSpan,
             double durationMs,
+            bool rotate,
+            double rotationDurationMs,
+            double pulseDurationMs,
             double strokeWidth,
             Func<double, double, Point> point)
         {
@@ -39,6 +42,9 @@ namespace FlowWatch.Helpers
             ParticleCount = particleCount;
             TrailSpan = trailSpan;
             DurationMs = durationMs;
+            Rotate = rotate;
+            RotationDurationMs = rotationDurationMs;
+            PulseDurationMs = pulseDurationMs;
             StrokeWidth = strokeWidth;
             Point = point;
         }
@@ -48,6 +54,9 @@ namespace FlowWatch.Helpers
         public int ParticleCount { get; }
         public double TrailSpan { get; }
         public double DurationMs { get; }
+        public bool Rotate { get; }
+        public double RotationDurationMs { get; }
+        public double PulseDurationMs { get; }
         public double StrokeWidth { get; }
         public Func<double, double, Point> Point { get; }
     }
@@ -65,14 +74,14 @@ namespace FlowWatch.Helpers
         {
             var definitions = new List<MathCurveDefinition>
             {
-                Thinking("original-thinking", "Original Thinking", 7, 64, 0.38, 4600, 5.5),
-                Thinking("thinking-five", "Thinking Five", 5, 62, 0.38, 4600, 5.5),
-                Thinking("thinking-nine", "Thinking Nine", 9, 68, 0.39, 4700, 5.5),
+                Thinking("original-thinking", "Original Thinking", 7, 64, 0.38, 4600, 28000, 4200, 5.5),
+                Thinking("thinking-five", "Thinking Five", 5, 62, 0.38, 4600, 28000, 4200, 5.5),
+                Thinking("thinking-nine", "Thinking Nine", 9, 68, 0.39, 4700, 30000, 4200, 5.5),
                 RoseOrbit(),
-                Rose("rose-curve", "Rose Curve", 5, 78, 0.32, 5400, 4.5),
-                Rose("rose-two", "Rose Two", 2, 74, 0.30, 5200, 4.6),
-                Rose("rose-three", "Rose Three", 3, 76, 0.31, 5300, 4.6),
-                Rose("rose-four", "Rose Four", 4, 78, 0.32, 5400, 4.6),
+                Rose("rose-curve", "Rose Curve", 5, 78, 0.32, 5400, 28000, 4600, 4.5),
+                Rose("rose-two", "Rose Two", 2, 74, 0.30, 5200, 28000, 4300, 4.6),
+                Rose("rose-three", "Rose Three", 3, 76, 0.31, 5300, 28000, 4400, 4.6),
+                Rose("rose-four", "Rose Four", 4, 78, 0.32, 5400, 28000, 4500, 4.6),
                 LissajousDrift(),
                 LemniscateBloom(),
                 HypotrochoidLoop(),
@@ -140,6 +149,8 @@ namespace FlowWatch.Helpers
             int particleCount,
             double trailSpan,
             double durationMs,
+            double rotationDurationMs,
+            double pulseDurationMs,
             double strokeWidth)
         {
             return new MathCurveDefinition(
@@ -148,6 +159,9 @@ namespace FlowWatch.Helpers
                 particleCount,
                 trailSpan,
                 durationMs,
+                true,
+                rotationDurationMs,
+                pulseDurationMs,
                 strokeWidth,
                 (progress, detailScale) =>
                 {
@@ -166,6 +180,9 @@ namespace FlowWatch.Helpers
                 72,
                 0.42,
                 5200,
+                true,
+                28000,
+                4600,
                 5.2,
                 (progress, detailScale) =>
                 {
@@ -184,6 +201,8 @@ namespace FlowWatch.Helpers
             int particleCount,
             double trailSpan,
             double durationMs,
+            double rotationDurationMs,
+            double pulseDurationMs,
             double strokeWidth)
         {
             return new MathCurveDefinition(
@@ -192,6 +211,9 @@ namespace FlowWatch.Helpers
                 particleCount,
                 trailSpan,
                 durationMs,
+                true,
+                rotationDurationMs,
+                pulseDurationMs,
                 strokeWidth,
                 (progress, detailScale) =>
                 {
@@ -212,6 +234,9 @@ namespace FlowWatch.Helpers
                 68,
                 0.34,
                 6000,
+                false,
+                36000,
+                5400,
                 4.7,
                 (progress, detailScale) =>
                 {
@@ -231,6 +256,9 @@ namespace FlowWatch.Helpers
                 70,
                 0.40,
                 5600,
+                false,
+                34000,
+                5000,
                 4.8,
                 (progress, detailScale) =>
                 {
@@ -251,6 +279,9 @@ namespace FlowWatch.Helpers
                 82,
                 0.46,
                 7600,
+                false,
+                42000,
+                6200,
                 4.6,
                 (progress, detailScale) =>
                 {
@@ -271,6 +302,9 @@ namespace FlowWatch.Helpers
                 particleCount,
                 0.34,
                 4600,
+                true,
+                28000,
+                4200,
                 4.4,
                 (progress, detailScale) =>
                 {
@@ -291,6 +325,9 @@ namespace FlowWatch.Helpers
                 88,
                 0.32,
                 9000,
+                false,
+                50000,
+                7000,
                 4.4,
                 (progress, detailScale) =>
                 {
@@ -313,6 +350,9 @@ namespace FlowWatch.Helpers
                 72,
                 0.36,
                 6200,
+                false,
+                36000,
+                5200,
                 4.9,
                 (progress, detailScale) =>
                 {
@@ -333,6 +373,9 @@ namespace FlowWatch.Helpers
                 74,
                 0.36,
                 6200,
+                false,
+                36000,
+                5200,
                 4.9,
                 (progress, detailScale) =>
                 {
@@ -353,6 +396,9 @@ namespace FlowWatch.Helpers
                 104,
                 0.18,
                 8400,
+                false,
+                22000,
+                5600,
                 3.9,
                 (progress, detailScale) =>
                 {
@@ -376,6 +422,9 @@ namespace FlowWatch.Helpers
                 86,
                 0.28,
                 7800,
+                false,
+                44000,
+                6800,
                 4.3,
                 (progress, detailScale) =>
                 {
@@ -396,6 +445,9 @@ namespace FlowWatch.Helpers
                 92,
                 0.31,
                 8400,
+                false,
+                44000,
+                6800,
                 4.2,
                 (progress, detailScale) =>
                 {
