@@ -11,6 +11,8 @@ namespace FlowWatch.ViewModels
     {
         private const string MinimalDisplayMode = "minimal";
         private const string SpiralDisplayMode = "spiral";
+        private const int MinRandomAnimationIntervalMinutes = 1;
+        private const int MaxRandomAnimationIntervalMinutes = 60;
 
         private int _refreshIntervalSeconds = 1;
         private bool _lockOnTop = true;
@@ -21,6 +23,7 @@ namespace FlowWatch.ViewModels
         private string _layout = "horizontal";
         private string _displayMode = "speed";
         private string _overlayAnimationKey = MathCurveCatalog.DefaultKey;
+        private int _overlayRandomAnimationIntervalMinutes = 5;
         private IReadOnlyList<MathCurveAnimationOption> _overlayAnimationOptions = MathCurveCatalog.Options;
         private string _fontFamily = "Segoe UI, Microsoft YaHei, sans-serif";
         private int _fontSize = 18;
@@ -150,9 +153,25 @@ namespace FlowWatch.ViewModels
             set
             {
                 if (SetProperty(ref _overlayAnimationKey, MathCurveCatalog.NormalizeKey(value)))
+                {
+                    OnPropertyChanged(nameof(RandomAnimationIntervalVisibility));
+                    PushSettings();
+                }
+            }
+        }
+
+        public int OverlayRandomAnimationIntervalMinutes
+        {
+            get => _overlayRandomAnimationIntervalMinutes;
+            set
+            {
+                if (SetProperty(ref _overlayRandomAnimationIntervalMinutes, ClampRandomAnimationIntervalMinutes(value)))
                     PushSettings();
             }
         }
+
+        public Visibility RandomAnimationIntervalVisibility =>
+            MathCurveCatalog.IsRandomKey(_overlayAnimationKey) ? Visibility.Visible : Visibility.Collapsed;
 
         public string FontFamily
         {
@@ -252,6 +271,7 @@ namespace FlowWatch.ViewModels
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode;
             OverlayAnimationKey = s.OverlayAnimationKey;
+            OverlayRandomAnimationIntervalMinutes = s.OverlayRandomAnimationIntervalMinutes;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             OverlayTextEnhancementEnabled = s.OverlayTextEnhancementEnabled;
@@ -280,6 +300,7 @@ namespace FlowWatch.ViewModels
                 s.Layout = _layout;
                 s.DisplayMode = _displayMode;
                 s.OverlayAnimationKey = _overlayAnimationKey;
+                s.OverlayRandomAnimationIntervalMinutes = _overlayRandomAnimationIntervalMinutes;
                 s.FontFamily = _fontFamily;
                 s.FontSize = _fontSize;
                 s.OverlayTextEnhancementEnabled = _overlayTextEnhancementEnabled;
@@ -309,6 +330,7 @@ namespace FlowWatch.ViewModels
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode;
             OverlayAnimationKey = s.OverlayAnimationKey;
+            OverlayRandomAnimationIntervalMinutes = s.OverlayRandomAnimationIntervalMinutes;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
             FontSize = s.FontSize;
             OverlayTextEnhancementEnabled = s.OverlayTextEnhancementEnabled;
@@ -428,6 +450,11 @@ namespace FlowWatch.ViewModels
                 default:
                     return "speed";
             }
+        }
+
+        private static int ClampRandomAnimationIntervalMinutes(int value)
+        {
+            return Math.Max(MinRandomAnimationIntervalMinutes, Math.Min(MaxRandomAnimationIntervalMinutes, value));
         }
     }
 
