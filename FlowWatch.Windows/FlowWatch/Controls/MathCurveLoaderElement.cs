@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using FlowWatch.Helpers;
 
 namespace FlowWatch.Controls
@@ -17,6 +19,13 @@ namespace FlowWatch.Controls
         private const double VirtualCanvasCenter = 50.0;
         private const double TargetCurveSize = 78.0;
         private const double MinNormalizableCurveSize = 0.001;
+        private const double SizeEpsilon = 0.01;
+        private const double ActiveMotionRatioThreshold = 0.35;
+        private const double MaxFrameElapsedMs = 250.0;
+        private static readonly TimeSpan TransitionFrameInterval = TimeSpan.FromMilliseconds(33);
+        private static readonly TimeSpan ActiveFrameInterval = TimeSpan.FromMilliseconds(42);
+        private static readonly TimeSpan LowMotionFrameInterval = TimeSpan.FromMilliseconds(80);
+        private static readonly TimeSpan IdleFrameInterval = TimeSpan.FromMilliseconds(125);
 
         public static readonly DependencyProperty CurveKeyProperty =
             DependencyProperty.Register(
@@ -42,8 +51,13 @@ namespace FlowWatch.Controls
                 typeof(MathCurveLoaderElement),
                 new FrameworkPropertyMetadata(Brushes.White, FrameworkPropertyMetadataOptions.AffectsRender));
 
-        private bool _renderingSubscribed;
+        private readonly Dictionary<string, CurveSamples> _curveCache =
+            new Dictionary<string, CurveSamples>(StringComparer.OrdinalIgnoreCase);
+        private DispatcherTimer _renderTimer;
+        private bool _renderingActive;
         private long _lastFrameTick;
+        private double _cachedWidth;
+        private double _cachedHeight;
         private double _motionTimeMs;
         private double _currentMotionMultiplier = MinMotionMultiplier;
         private string _currentCurveKey = MathCurveCatalog.DefaultKey;
@@ -109,6 +123,8 @@ namespace FlowWatch.Controls
             double size = Math.Min(width, height);
             double scale = size / 100.0;
             var offset = new Vector((width - size) / 2.0, (height - size) / 2.0);
+            ResetCurveCacheIfSizeChanged(width, height);
+
             var brush = SpiralBrush ?? Brushes.White;
             double transitionProgress = GetTransitionProgress();
             var currentDefinition = MathCurveCatalog.Get(_currentCurveKey);
@@ -137,7 +153,7 @@ namespace FlowWatch.Controls
                 return;
 
             double progress = NormalizeProgress((_motionTimeMs % definition.DurationMs) / definition.DurationMs);
-            var samples = BuildCurveSamples(definition, StableDetailScale, scale, offset);
+            var samples = GetCurveSamples(definition, scale, offset);
 
             var pen = new Pen(brush, definition.StrokeWidth * scale)
             {
@@ -147,7 +163,7 @@ namespace FlowWatch.Controls
             };
 
             drawingContext.PushOpacity(opacity * 0.12);
-            drawingContext.DrawGeometry(null, pen, BuildPathGeometry(samples));
+            drawingContext.DrawGeometry(null, pen, samples.Geometry);
             drawingContext.Pop();
 
             for (int index = definition.ParticleCount - 1; index >= 0; index--)
@@ -213,27 +229,41 @@ namespace FlowWatch.Controls
 
         private void StartRendering()
         {
-            if (_renderingSubscribed)
+            if (_renderingActive)
                 return;
 
             _lastFrameTick = Stopwatch.GetTimestamp();
-            CompositionTarget.Rendering += OnRendering;
-            _renderingSubscribed = true;
+            if (_renderTimer == null)
+            {
+                _renderTimer = new DispatcherTimer(DispatcherPriority.Render)
+                {
+                    Interval = GetFrameInterval()
+                };
+                _renderTimer.Tick += OnRenderTimerTick;
+            }
+
+            _renderTimer.Interval = GetFrameInterval();
+            _renderTimer.Start();
+            _renderingActive = true;
             InvalidateVisual();
         }
 
         private void StopRendering()
         {
-            if (!_renderingSubscribed)
+            if (!_renderingActive)
                 return;
 
-            CompositionTarget.Rendering -= OnRendering;
-            _renderingSubscribed = false;
+            _renderTimer?.Stop();
+            _renderingActive = false;
             _lastFrameTick = 0;
         }
 
-        private void OnRendering(object sender, EventArgs e)
+        private void OnRenderTimerTick(object sender, EventArgs e)
         {
+            var interval = GetFrameInterval();
+            if (_renderTimer != null && _renderTimer.Interval != interval)
+                _renderTimer.Interval = interval;
+
             long now = Stopwatch.GetTimestamp();
             if (_lastFrameTick == 0)
             {
@@ -244,10 +274,24 @@ namespace FlowWatch.Controls
 
             double elapsedMs = (now - _lastFrameTick) * 1000.0 / Stopwatch.Frequency;
             _lastFrameTick = now;
-            elapsedMs = Math.Max(0.0, Math.Min(80.0, elapsedMs));
+            elapsedMs = Math.Max(0.0, Math.Min(MaxFrameElapsedMs, elapsedMs));
             _currentMotionMultiplier += (GetTargetMotionMultiplier() - _currentMotionMultiplier) * GetSmoothingFactor(elapsedMs);
             _motionTimeMs += elapsedMs * _currentMotionMultiplier;
             InvalidateVisual();
+        }
+
+        private TimeSpan GetFrameInterval()
+        {
+            if (_isTransitioning)
+                return TransitionFrameInterval;
+
+            double motionRatio = Math.Min(1.0, Math.Max(0.0, MotionRatio));
+            if (motionRatio >= ActiveMotionRatioThreshold)
+                return ActiveFrameInterval;
+            if (motionRatio > 0.0)
+                return LowMotionFrameInterval;
+
+            return IdleFrameInterval;
         }
 
         private double GetTargetMotionMultiplier()
@@ -259,6 +303,30 @@ namespace FlowWatch.Controls
         private static double GetSmoothingFactor(double elapsedMs)
         {
             return 1.0 - Math.Exp(-elapsedMs / MotionSmoothingMs);
+        }
+
+        private CurveSamples GetCurveSamples(MathCurveDefinition definition, double scale, Vector offset)
+        {
+            CurveSamples samples;
+            if (_curveCache.TryGetValue(definition.Key, out samples))
+                return samples;
+
+            samples = BuildCurveSamples(definition, StableDetailScale, scale, offset);
+            _curveCache[definition.Key] = samples;
+            return samples;
+        }
+
+        private void ResetCurveCacheIfSizeChanged(double width, double height)
+        {
+            if (Math.Abs(width - _cachedWidth) <= SizeEpsilon &&
+                Math.Abs(height - _cachedHeight) <= SizeEpsilon)
+            {
+                return;
+            }
+
+            _cachedWidth = width;
+            _cachedHeight = height;
+            _curveCache.Clear();
         }
 
         private static CurveSamples BuildCurveSamples(MathCurveDefinition definition, double detailScale, double scale, Vector offset)
@@ -301,7 +369,7 @@ namespace FlowWatch.Controls
                 cumulativeLengths[index] = totalLength;
             }
 
-            return new CurveSamples(points, cumulativeLengths, totalLength);
+            return new CurveSamples(points, cumulativeLengths, totalLength, BuildPathGeometry(points));
         }
 
         private static Point NormalizeCurvePoint(Point point, double centerX, double centerY, double curveScale)
@@ -311,11 +379,11 @@ namespace FlowWatch.Controls
                 VirtualCanvasCenter + (point.Y - centerY) * curveScale);
         }
 
-        private static PathGeometry BuildPathGeometry(CurveSamples samples)
+        private static PathGeometry BuildPathGeometry(Point[] points)
         {
             var figure = new PathFigure
             {
-                StartPoint = samples.Points[0],
+                StartPoint = points[0],
                 IsClosed = false,
                 IsFilled = false
             };
@@ -323,12 +391,13 @@ namespace FlowWatch.Controls
             var segment = new PolyLineSegment();
             for (int index = 1; index <= PathSteps; index++)
             {
-                segment.Points.Add(samples.Points[index]);
+                segment.Points.Add(points[index]);
             }
 
             figure.Segments.Add(segment);
             var geometry = new PathGeometry();
             geometry.Figures.Add(figure);
+            geometry.Freeze();
             return geometry;
         }
 
@@ -387,16 +456,18 @@ namespace FlowWatch.Controls
 
         private sealed class CurveSamples
         {
-            public CurveSamples(Point[] points, double[] cumulativeLengths, double totalLength)
+            public CurveSamples(Point[] points, double[] cumulativeLengths, double totalLength, PathGeometry geometry)
             {
                 Points = points;
                 CumulativeLengths = cumulativeLengths;
                 TotalLength = totalLength;
+                Geometry = geometry;
             }
 
             public Point[] Points { get; }
             public double[] CumulativeLengths { get; }
             public double TotalLength { get; }
+            public PathGeometry Geometry { get; }
         }
     }
 }
