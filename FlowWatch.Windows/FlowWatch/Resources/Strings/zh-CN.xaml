@@ -38,6 +38,12 @@
     <sys:String x:Key="Settings.LayoutHorizontal">水平</sys:String>
     <sys:String x:Key="Settings.LayoutVertical">垂直</sys:String>
     <sys:String x:Key="Settings.DisplayMode">显示模式</sys:String>
+    <sys:String x:Key="Settings.DisplayStyle">显示样式</sys:String>
+    <sys:String x:Key="Settings.DisplayStandard">标准</sys:String>
+    <sys:String x:Key="Settings.DisplayContent">显示内容</sys:String>
+    <sys:String x:Key="Settings.DisplayContentHint">控制悬浮窗中的网速指示和当日累计流量</sys:String>
+    <sys:String x:Key="Settings.ShowNetworkSpeed">显示网速</sys:String>
+    <sys:String x:Key="Settings.ShowTodayUsage">显示当日累计</sys:String>
     <sys:String x:Key="Settings.DisplaySpeed">速率</sys:String>
     <sys:String x:Key="Settings.DisplayUsage">流量</sys:String>
     <sys:String x:Key="Settings.DisplayBoth">速率+流量</sys:String>
