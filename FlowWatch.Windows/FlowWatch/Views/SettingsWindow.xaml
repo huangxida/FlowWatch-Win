@@ -171,18 +171,46 @@
                             <Border Style="{StaticResource DividerStyle}"/>
 
                             <DockPanel Margin="0,14,0,14">
-                                <TextBlock Text="{DynamicResource Settings.DisplayMode}" Style="{StaticResource FieldLabelStyle}"
+                                <TextBlock Text="{DynamicResource Settings.DisplayStyle}" Style="{StaticResource FieldLabelStyle}"
                                            DockPanel.Dock="Left" VerticalAlignment="Center"/>
                                 <ComboBox SelectedValue="{Binding DisplayMode}" SelectedValuePath="Tag"
                                           Style="{StaticResource SettingsComboBoxStyle}"
                                           DockPanel.Dock="Right" HorizontalAlignment="Right"
                                           Width="150" VerticalAlignment="Center">
-                                    <ComboBoxItem Content="{DynamicResource Settings.DisplaySpeed}" Tag="speed"/>
-                                    <ComboBoxItem Content="{DynamicResource Settings.DisplayUsage}" Tag="usage"/>
-                                    <ComboBoxItem Content="{DynamicResource Settings.DisplayBoth}" Tag="both"/>
+                                    <ComboBoxItem Content="{DynamicResource Settings.DisplayStandard}" Tag="standard"/>
                                     <ComboBoxItem Content="{DynamicResource Settings.DisplayMinimal}" Tag="minimal"/>
                                     <ComboBoxItem Content="{DynamicResource Settings.DisplaySpiral}" Tag="spiral"/>
                                 </ComboBox>
+                            </DockPanel>
+
+                            <Border Style="{StaticResource DividerStyle}"/>
+
+                            <DockPanel Margin="0,14,0,14">
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="420">
+                                    <TextBlock Text="{DynamicResource Settings.DisplayContent}" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBlock Text="{DynamicResource Settings.DisplayContentHint}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                            Width="210" VerticalAlignment="Center">
+                                    <DockPanel Margin="0,0,0,8">
+                                        <TextBlock Text="{DynamicResource Settings.ShowNetworkSpeed}"
+                                                   Style="{StaticResource ValueStyle}"
+                                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                        <CheckBox IsChecked="{Binding ShowNetworkSpeed}"
+                                                  Style="{StaticResource ToggleSwitchStyle}"
+                                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                  VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                    <DockPanel>
+                                        <TextBlock Text="{DynamicResource Settings.ShowTodayUsage}"
+                                                   Style="{StaticResource ValueStyle}"
+                                                   DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                        <CheckBox IsChecked="{Binding ShowTodayUsage}"
+                                                  Style="{StaticResource ToggleSwitchStyle}"
+                                                  DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                  VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                </StackPanel>
                             </DockPanel>
 
                             <Border Style="{StaticResource DividerStyle}"/>

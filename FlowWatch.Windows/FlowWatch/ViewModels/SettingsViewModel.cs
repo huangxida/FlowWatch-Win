@@ -9,6 +9,7 @@ namespace FlowWatch.ViewModels
 {
     public class SettingsViewModel : ViewModelBase
     {
+        private const string StandardDisplayMode = "standard";
         private const string MinimalDisplayMode = "minimal";
         private const string SpiralDisplayMode = "spiral";
         private const int MinRandomAnimationIntervalMinutes = 1;
@@ -21,7 +22,9 @@ namespace FlowWatch.ViewModels
         private bool _autoCheckUpdate = true;
         private string _language = "auto";
         private string _layout = "horizontal";
-        private string _displayMode = "speed";
+        private string _displayMode = StandardDisplayMode;
+        private bool _showNetworkSpeed = true;
+        private bool _showTodayUsage;
         private string _overlayAnimationKey = MathCurveCatalog.DefaultKey;
         private int _overlayRandomAnimationIntervalMinutes = 5;
         private IReadOnlyList<MathCurveAnimationOption> _overlayAnimationOptions = MathCurveCatalog.Options;
@@ -137,6 +140,32 @@ namespace FlowWatch.ViewModels
             set
             {
                 if (SetProperty(ref _displayMode, NormalizeDisplayMode(value)))
+                    PushSettings();
+            }
+        }
+
+        public bool ShowNetworkSpeed
+        {
+            get => _showNetworkSpeed;
+            set
+            {
+                if (!value && !_showTodayUsage)
+                    SetProperty(ref _showTodayUsage, true, nameof(ShowTodayUsage));
+
+                if (SetProperty(ref _showNetworkSpeed, value))
+                    PushSettings();
+            }
+        }
+
+        public bool ShowTodayUsage
+        {
+            get => _showTodayUsage;
+            set
+            {
+                if (!value && !_showNetworkSpeed)
+                    SetProperty(ref _showNetworkSpeed, true, nameof(ShowNetworkSpeed));
+
+                if (SetProperty(ref _showTodayUsage, value))
                     PushSettings();
             }
         }
@@ -270,6 +299,8 @@ namespace FlowWatch.ViewModels
             Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode;
+            ShowNetworkSpeed = s.ShowNetworkSpeed;
+            ShowTodayUsage = s.ShowTodayUsage;
             OverlayAnimationKey = s.OverlayAnimationKey;
             OverlayRandomAnimationIntervalMinutes = s.OverlayRandomAnimationIntervalMinutes;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
@@ -299,6 +330,8 @@ namespace FlowWatch.ViewModels
                 s.Language = _language;
                 s.Layout = _layout;
                 s.DisplayMode = _displayMode;
+                s.ShowNetworkSpeed = _showNetworkSpeed;
+                s.ShowTodayUsage = _showTodayUsage;
                 s.OverlayAnimationKey = _overlayAnimationKey;
                 s.OverlayRandomAnimationIntervalMinutes = _overlayRandomAnimationIntervalMinutes;
                 s.FontFamily = _fontFamily;
@@ -329,6 +362,8 @@ namespace FlowWatch.ViewModels
             Language = s.Language ?? "auto";
             Layout = s.Layout ?? "horizontal";
             DisplayMode = s.DisplayMode;
+            ShowNetworkSpeed = s.ShowNetworkSpeed;
+            ShowTodayUsage = s.ShowTodayUsage;
             OverlayAnimationKey = s.OverlayAnimationKey;
             OverlayRandomAnimationIntervalMinutes = s.OverlayRandomAnimationIntervalMinutes;
             FontFamily = s.FontFamily ?? "Segoe UI, Microsoft YaHei, sans-serif";
@@ -441,14 +476,16 @@ namespace FlowWatch.ViewModels
         {
             switch (value)
             {
-                case "speed":
-                case "usage":
-                case "both":
+                case StandardDisplayMode:
                 case MinimalDisplayMode:
                 case SpiralDisplayMode:
                     return value;
+                case "speed":
+                case "usage":
+                case "both":
+                    return StandardDisplayMode;
                 default:
-                    return "speed";
+                    return StandardDisplayMode;
             }
         }
 

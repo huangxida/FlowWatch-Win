@@ -38,6 +38,12 @@
     <sys:String x:Key="Settings.LayoutHorizontal">Horizontal</sys:String>
     <sys:String x:Key="Settings.LayoutVertical">Vertical</sys:String>
     <sys:String x:Key="Settings.DisplayMode">Display Mode</sys:String>
+    <sys:String x:Key="Settings.DisplayStyle">Overlay Style</sys:String>
+    <sys:String x:Key="Settings.DisplayStandard">Standard</sys:String>
+    <sys:String x:Key="Settings.DisplayContent">Display Content</sys:String>
+    <sys:String x:Key="Settings.DisplayContentHint">Control the overlay speed indicator and today's accumulated usage</sys:String>
+    <sys:String x:Key="Settings.ShowNetworkSpeed">Show Speed</sys:String>
+    <sys:String x:Key="Settings.ShowTodayUsage">Show Today Usage</sys:String>
     <sys:String x:Key="Settings.DisplaySpeed">Speed</sys:String>
     <sys:String x:Key="Settings.DisplayUsage">Usage</sys:String>
     <sys:String x:Key="Settings.DisplayBoth">Speed+Usage</sys:String>

@@ -11,6 +11,7 @@ namespace FlowWatch.ViewModels
 {
     public class OverlayViewModel : ViewModelBase
     {
+        private const string StandardDisplayMode = "standard";
         private const string MinimalDisplayMode = "minimal";
         private const string SpiralDisplayMode = "spiral";
         private const double SignalBlinkMinSpeedBytesPerSecond = 1024.0;
@@ -43,13 +44,19 @@ namespace FlowWatch.ViewModels
         private bool _overlayTextEnhancementEnabled = true;
         private bool _isVertical;
         private bool _isLocked = true;
-        private string _displayMode = "speed";
+        private string _displayMode = StandardDisplayMode;
+        private bool _showNetworkSpeed = true;
+        private bool _showTodayUsage;
         private string _overlayAnimationKey = MathCurveCatalog.DefaultKey;
         private string _activeOverlayAnimationKey = MathCurveCatalog.DefaultKey;
         private Visibility _secondaryVisibility = Visibility.Collapsed;
         private Visibility _standardVisibility = Visibility.Visible;
         private Visibility _minimalVisibility = Visibility.Collapsed;
         private Visibility _spiralVisibility = Visibility.Collapsed;
+        private Visibility _minimalSignalVisibility = Visibility.Visible;
+        private Visibility _minimalUsageVisibility = Visibility.Collapsed;
+        private Visibility _spiralAnimationVisibility = Visibility.Visible;
+        private Visibility _spiralUsageVisibility = Visibility.Collapsed;
         private Brush _uploadSignalColor = Brushes.White;
         private Brush _downloadSignalColor = Brushes.White;
         private double _uploadSignalOpacity = SignalBrightOpacity;
@@ -239,21 +246,34 @@ namespace FlowWatch.ViewModels
                 var mode = NormalizeDisplayMode(value);
                 if (SetProperty(ref _displayMode, mode))
                 {
-                    var isMinimal = mode == MinimalDisplayMode;
-                    var isSpiral = mode == SpiralDisplayMode;
-                    SecondaryVisibility = mode == "both" ? Visibility.Visible : Visibility.Collapsed;
-                    StandardVisibility = isMinimal || isSpiral ? Visibility.Collapsed : Visibility.Visible;
-                    MinimalVisibility = isMinimal ? Visibility.Visible : Visibility.Collapsed;
-                    SpiralVisibility = isSpiral ? Visibility.Visible : Visibility.Collapsed;
-                    if (isMinimal)
-                        RefreshSignalBlinking();
-                    else
-                        ResetSignalBlinking();
-                    OnPropertyChanged(nameof(ShowSpeed));
-                    OnPropertyChanged(nameof(ShowUsage));
-                    OnPropertyChanged(nameof(IsMinimalMode));
-                    OnPropertyChanged(nameof(IsSpiralMode));
-                    UpdateAnimationSelectionMode();
+                    _lastRenderedKey = null;
+                    UpdateDisplayVisibility();
+                }
+            }
+        }
+
+        public bool ShowNetworkSpeed
+        {
+            get => _showNetworkSpeed;
+            private set
+            {
+                if (SetProperty(ref _showNetworkSpeed, value))
+                {
+                    _lastRenderedKey = null;
+                    UpdateDisplayVisibility();
+                }
+            }
+        }
+
+        public bool ShowTodayUsage
+        {
+            get => _showTodayUsage;
+            private set
+            {
+                if (SetProperty(ref _showTodayUsage, value))
+                {
+                    _lastRenderedKey = null;
+                    UpdateDisplayVisibility();
                 }
             }
         }
@@ -298,6 +318,30 @@ namespace FlowWatch.ViewModels
             set => SetProperty(ref _spiralVisibility, value);
         }
 
+        public Visibility MinimalSignalVisibility
+        {
+            get => _minimalSignalVisibility;
+            set => SetProperty(ref _minimalSignalVisibility, value);
+        }
+
+        public Visibility MinimalUsageVisibility
+        {
+            get => _minimalUsageVisibility;
+            set => SetProperty(ref _minimalUsageVisibility, value);
+        }
+
+        public Visibility SpiralAnimationVisibility
+        {
+            get => _spiralAnimationVisibility;
+            set => SetProperty(ref _spiralAnimationVisibility, value);
+        }
+
+        public Visibility SpiralUsageVisibility
+        {
+            get => _spiralUsageVisibility;
+            set => SetProperty(ref _spiralUsageVisibility, value);
+        }
+
         public Brush UploadSignalColor
         {
             get => _uploadSignalColor;
@@ -334,16 +378,49 @@ namespace FlowWatch.ViewModels
             set => SetProperty(ref _spiralMotionRatio, Math.Min(1.0, Math.Max(0.0, value)));
         }
 
-        public bool ShowSpeed => _displayMode != "usage" && _displayMode != MinimalDisplayMode && _displayMode != SpiralDisplayMode;
-        public bool ShowUsage => _displayMode == "usage";
+        public bool ShowSpeed => _showNetworkSpeed;
+        public bool ShowUsage => _showTodayUsage;
         public bool IsMinimalMode => _displayMode == MinimalDisplayMode;
         public bool IsSpiralMode => _displayMode == SpiralDisplayMode;
         public string UploadMinimalUsageText => FormatMinimalUsageText(_uploadUsageNum, _uploadUsageUnit);
         public string DownloadMinimalUsageText => FormatMinimalUsageText(_downloadUsageNum, _downloadUsageUnit);
+        private bool ShouldShowNetworkSpeed => _showNetworkSpeed || !_showTodayUsage;
+        private bool ShouldShowTodayUsage => _showTodayUsage;
+        private bool IsMinimalSignalActive => IsMinimalMode && ShouldShowNetworkSpeed;
+        private bool IsSpiralAnimationActive => IsSpiralMode && ShouldShowNetworkSpeed;
 
         private static string FormatMinimalUsageText(string num, string unit)
         {
             return $"{num,4} {unit}";
+        }
+
+        private void UpdateDisplayVisibility()
+        {
+            var isStandard = _displayMode == StandardDisplayMode;
+            var isMinimal = IsMinimalMode;
+            var isSpiral = IsSpiralMode;
+            var showSpeed = ShouldShowNetworkSpeed;
+            var showUsage = ShouldShowTodayUsage;
+
+            StandardVisibility = isStandard ? Visibility.Visible : Visibility.Collapsed;
+            MinimalVisibility = isMinimal ? Visibility.Visible : Visibility.Collapsed;
+            SpiralVisibility = isSpiral ? Visibility.Visible : Visibility.Collapsed;
+            SecondaryVisibility = isStandard && showSpeed && showUsage ? Visibility.Visible : Visibility.Collapsed;
+            MinimalSignalVisibility = isMinimal && showSpeed ? Visibility.Visible : Visibility.Collapsed;
+            MinimalUsageVisibility = isMinimal && showUsage ? Visibility.Visible : Visibility.Collapsed;
+            SpiralAnimationVisibility = isSpiral && showSpeed ? Visibility.Visible : Visibility.Collapsed;
+            SpiralUsageVisibility = isSpiral && showUsage ? Visibility.Visible : Visibility.Collapsed;
+
+            if (IsMinimalSignalActive)
+                RefreshSignalBlinking();
+            else
+                ResetSignalBlinking();
+
+            OnPropertyChanged(nameof(ShowSpeed));
+            OnPropertyChanged(nameof(ShowUsage));
+            OnPropertyChanged(nameof(IsMinimalMode));
+            OnPropertyChanged(nameof(IsSpiralMode));
+            UpdateAnimationSelectionMode();
         }
 
         private void OnStatsUpdated(NetworkStats stats)
@@ -426,11 +503,13 @@ namespace FlowWatch.ViewModels
 
         private static string BuildRenderKey(
             string mode,
+            bool showNetworkSpeed,
+            bool showTodayUsage,
             string downNum, string downUnit, string upNum, string upUnit,
             string downUsageNum, string downUsageUnit, string upUsageNum, string upUsageUnit,
             long downColorQ, long upColorQ)
         {
-            return $"{mode}|{downNum}|{downUnit}|{upNum}|{upUnit}|{downUsageNum}|{downUsageUnit}|{upUsageNum}|{upUsageUnit}|{downColorQ}|{upColorQ}";
+            return $"{mode}|{showNetworkSpeed}|{showTodayUsage}|{downNum}|{downUnit}|{upNum}|{upUnit}|{downUsageNum}|{downUsageUnit}|{upUsageNum}|{upUsageUnit}|{downColorQ}|{upColorQ}";
         }
 
         private string BuildRenderKey(double downSpeed, double upSpeed, long totalDown, long totalUp)
@@ -443,7 +522,20 @@ namespace FlowWatch.ViewModels
             long downColorQ = (long)(downSpeed / SpeedColorStepBytesPerSecond);
             long upColorQ = (long)(upSpeed / SpeedColorStepBytesPerSecond);
 
-            return BuildRenderKey(_displayMode, downNum, downUnit, upNum, upUnit, downUsageNum, downUsageUnit, upUsageNum, upUsageUnit, downColorQ, upColorQ);
+            return BuildRenderKey(
+                _displayMode,
+                ShouldShowNetworkSpeed,
+                ShouldShowTodayUsage,
+                downNum,
+                downUnit,
+                upNum,
+                upUnit,
+                downUsageNum,
+                downUsageUnit,
+                upUsageNum,
+                upUsageUnit,
+                downColorQ,
+                upColorQ);
         }
 
         private void UpdateDisplay(double downSpeed, double upSpeed, long totalDown, long totalUp)
@@ -466,13 +558,26 @@ namespace FlowWatch.ViewModels
             long downColorQ = (long)(downSpeed / SpeedColorStepBytesPerSecond);
             long upColorQ = (long)(upSpeed / SpeedColorStepBytesPerSecond);
 
-            string key = BuildRenderKey(_displayMode, downNum, downUnit, upNum, upUnit, downUsageNum, downUsageUnit, upUsageNum, upUsageUnit, downColorQ, upColorQ);
+            string key = BuildRenderKey(
+                _displayMode,
+                ShouldShowNetworkSpeed,
+                ShouldShowTodayUsage,
+                downNum,
+                downUnit,
+                upNum,
+                upUnit,
+                downUsageNum,
+                downUsageUnit,
+                upUsageNum,
+                upUsageUnit,
+                downColorQ,
+                upColorQ);
 
             if (key == _lastRenderedKey)
                 return;
             _lastRenderedKey = key;
 
-            if (_displayMode == "usage")
+            if (!ShouldShowNetworkSpeed && ShouldShowTodayUsage)
             {
                 UploadNum = upUsageNum;
                 UploadUnit = upUsageUnit;
@@ -599,7 +704,7 @@ namespace FlowWatch.ViewModels
                 value => UploadSignalOpacity = value,
                 value => UploadSignalColor = value);
 
-            if (IsMinimalMode && HasActiveBlinking())
+            if (IsMinimalSignalActive && HasActiveBlinking())
                 EnsureSignalRendering();
             else if (!HasActiveBlinking())
                 StopSignalRendering();
@@ -614,7 +719,7 @@ namespace FlowWatch.ViewModels
             state.LastRawSpeed = speed;
             state.RawSpeedInitialized = true;
 
-            if (!IsMinimalMode || speed < SignalBlinkMinSpeedBytesPerSecond)
+            if (!IsMinimalSignalActive || speed < SignalBlinkMinSpeedBytesPerSecond)
             {
                 ResetSignalBlinkVisual(state);
                 setColor(Brushes.White);
@@ -668,7 +773,7 @@ namespace FlowWatch.ViewModels
                 _uploadBreath,
                 value => UploadSignalOpacity = value);
 
-            if (!IsMinimalMode || (!downloadActive && !uploadActive))
+            if (!IsMinimalSignalActive || (!downloadActive && !uploadActive))
                 StopSignalRendering();
         }
 
@@ -736,7 +841,7 @@ namespace FlowWatch.ViewModels
                 UploadSignalOpacity = SignalBrightOpacity;
             }
 
-            if (IsMinimalMode && HasActiveBlinking())
+            if (IsMinimalSignalActive && HasActiveBlinking())
                 EnsureSignalRendering();
             else if (!HasActiveBlinking())
                 StopSignalRendering();
@@ -752,7 +857,7 @@ namespace FlowWatch.ViewModels
 
         private Brush GetSignalBrush(SignalBreathState state, Brush speedBrush)
         {
-            return IsMinimalMode && !state.Active ? Brushes.White : speedBrush;
+            return IsMinimalSignalActive && !state.Active ? Brushes.White : speedBrush;
         }
 
         private bool HasActiveBlinking()
@@ -787,7 +892,7 @@ namespace FlowWatch.ViewModels
 
         private void UpdateAnimationSelectionMode()
         {
-            if (IsSpiralMode && MathCurveCatalog.IsRandomKey(_overlayAnimationKey))
+            if (IsSpiralAnimationActive && MathCurveCatalog.IsRandomKey(_overlayAnimationKey))
             {
                 if (!IsRealCurveKey(_activeOverlayAnimationKey))
                     ActiveOverlayAnimationKey = MathCurveCatalog.DefaultKey;
@@ -833,7 +938,7 @@ namespace FlowWatch.ViewModels
         private void OnRandomAnimationTimerTick(object sender, EventArgs e)
         {
             _randomAnimationTimer.Stop();
-            if (!IsSpiralMode || !MathCurveCatalog.IsRandomKey(_overlayAnimationKey))
+            if (!IsSpiralAnimationActive || !MathCurveCatalog.IsRandomKey(_overlayAnimationKey))
                 return;
 
             ActiveOverlayAnimationKey = PickRandomCurveKey(_activeOverlayAnimationKey);
@@ -895,6 +1000,8 @@ namespace FlowWatch.ViewModels
             OverlayTextEnhancementEnabled = s.OverlayTextEnhancementEnabled;
             IsVertical = s.Layout == "vertical";
             IsLocked = s.LockOnTop;
+            ShowNetworkSpeed = s.ShowNetworkSpeed;
+            ShowTodayUsage = s.ShowTodayUsage;
             DisplayMode = s.DisplayMode;
             OverlayAnimationKey = s.OverlayAnimationKey;
 
@@ -928,22 +1035,25 @@ namespace FlowWatch.ViewModels
                 _displayedUpSpeed = _targetUpSpeed;
                 _displayedTotalDown = _targetTotalDown;
                 _displayedTotalUp = _targetTotalUp;
-                UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, (long)_displayedTotalDown, (long)_displayedTotalUp);
             }
+
+            UpdateDisplay(_displayedDownSpeed, _displayedUpSpeed, (long)_displayedTotalDown, (long)_displayedTotalUp);
         }
 
         private static string NormalizeDisplayMode(string value)
         {
             switch (value)
             {
-                case "speed":
-                case "usage":
-                case "both":
+                case StandardDisplayMode:
                 case MinimalDisplayMode:
                 case SpiralDisplayMode:
                     return value;
+                case "speed":
+                case "usage":
+                case "both":
+                    return StandardDisplayMode;
                 default:
-                    return "speed";
+                    return StandardDisplayMode;
             }
         }
 

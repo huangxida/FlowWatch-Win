@@ -208,25 +208,29 @@
             <Ellipse Grid.Row="0" Grid.Column="0" Width="10" Height="10"
                      Fill="{Binding UploadSignalColor}"
                      Opacity="{Binding UploadSignalOpacity}"
+                     Visibility="{Binding MinimalSignalVisibility}"
                      Effect="{StaticResource OverlaySignalShadow}"
                      VerticalAlignment="Center" Margin="0,0,5,0"/>
             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding UploadMinimalUsageText}" Style="{StaticResource NumStyle}"
-                       Foreground="{Binding UploadColor}"
-                       FontFamily="{Binding FontFamily}"
-                       FontSize="{Binding MinimalFontSize}"
-                       MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right"/>
+                        Foreground="{Binding UploadColor}"
+                        FontFamily="{Binding FontFamily}"
+                        FontSize="{Binding MinimalFontSize}"
+                        Visibility="{Binding MinimalUsageVisibility}"
+                        MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right"/>
 
             <!-- Download row -->
             <Ellipse Grid.Row="1" Grid.Column="0" Width="10" Height="10"
                      Fill="{Binding DownloadSignalColor}"
                      Opacity="{Binding DownloadSignalOpacity}"
+                     Visibility="{Binding MinimalSignalVisibility}"
                      Effect="{StaticResource OverlaySignalShadow}"
                      VerticalAlignment="Center" Margin="0,1,5,0"/>
             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DownloadMinimalUsageText}" Style="{StaticResource NumStyle}"
-                       Foreground="{Binding DownloadColor}"
-                       FontFamily="{Binding FontFamily}"
-                       FontSize="{Binding MinimalFontSize}"
-                       MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right" Margin="0,1,0,0"/>
+                        Foreground="{Binding DownloadColor}"
+                        FontFamily="{Binding FontFamily}"
+                        FontSize="{Binding MinimalFontSize}"
+                        Visibility="{Binding MinimalUsageVisibility}"
+                        MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right" Margin="0,1,0,0"/>
         </Grid>
 
         <!-- Animated usage layout -->
@@ -246,17 +250,20 @@
                                              CurveKey="{Binding ActiveOverlayAnimationKey}"
                                              MotionRatio="{Binding SpiralMotionRatio}"
                                              SpiralBrush="{Binding SpiralColor}"
+                                             Visibility="{Binding SpiralAnimationVisibility}"
                                              Effect="{StaticResource OverlayTextShadow}"
                                              VerticalAlignment="Center" Margin="0,0,6,0"/>
             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding UploadMinimalUsageText}" Style="{StaticResource NumStyle}"
                        Foreground="{Binding UploadColor}"
                        FontFamily="{Binding FontFamily}"
                        FontSize="{Binding MinimalFontSize}"
+                       Visibility="{Binding SpiralUsageVisibility}"
                        MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right"/>
             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DownloadMinimalUsageText}" Style="{StaticResource NumStyle}"
                        Foreground="{Binding DownloadColor}"
                        FontFamily="{Binding FontFamily}"
                        FontSize="{Binding MinimalFontSize}"
+                       Visibility="{Binding SpiralUsageVisibility}"
                        MinWidth="58" TextAlignment="Right" HorizontalAlignment="Right" Margin="0,1,0,0"/>
         </Grid>
     </Grid>
